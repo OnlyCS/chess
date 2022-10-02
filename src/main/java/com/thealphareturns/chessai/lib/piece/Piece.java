@@ -11,7 +11,7 @@ package com.thealphareturns.chessai.lib.piece;
 
 public class Piece {
 	public char team;
-	private char type;
+	private final char type;
 	public int value = 0;
 
 	int y;
@@ -45,8 +45,8 @@ public class Piece {
 
 	public boolean canMakeMove(int y, int x, Piece[][] board) {
 		int[][] moves = this.getMoves(board);
-		for (int i = 0; i < moves.length; i++) {
-			if (moves[i][0] == y && moves[i][1] == x) {
+		for (int[] move : moves) {
+			if (move[0] == y && move[1] == x) {
 				return true;
 			}
 		}
@@ -88,5 +88,9 @@ public class Piece {
 		}
 
 		throw new UnsupportedOperationException("This piece does not have a toString() method implemented");
+	}
+
+	public int[] getCoords() {
+		return new int[]{this.y, this.x};
 	}
 }

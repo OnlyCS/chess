@@ -2,6 +2,7 @@ package com.thealphareturns.chessai.lib.board;
 
 import com.thealphareturns.chessai.lib.util.ArrayUtil;
 import com.thealphareturns.chessai.lib.piece.*;
+import com.thealphareturns.chessai.lib.util.MoveUtil;
 import org.json.JSONObject;
 
 public class Board {
@@ -88,19 +89,23 @@ public class Board {
 	}
 
 	public void draw() {
-		System.out.println("  a b c d e f g h");
+		System.out.println("   a b c d e f g h");
+		System.out.println("  _________________");
 		for (int i = 0; i < 8; i++) {
-			System.out.print(8 - i + " ");
+			System.out.print(8 - i + " |");
 			for (int j = 0; j < 8; j++) {
 				if (this.board[i][j] == null) {
-					System.out.print("  ");
+					System.out.print(" ");
 				} else {
-					System.out.print(this.board[i][j].toString() + " ");
+					System.out.print(this.board[i][j].toString());
+				}
+				if (j != 7) {
+					System.out.print(" ");
 				}
 			}
-			System.out.println(8 - i);
+			System.out.println("|");
 		}
-		System.out.println("  a b c d e f g h");
+		System.out.println("  ‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾");
 	}
 
 	public int[][] getMoves() {
@@ -109,20 +114,36 @@ public class Board {
 		for (int y = 0; y < 8; y++) {
 			for (int x = 0; x < 8; x++) {
 				int[][] pieceMoves = this.board[y][x].getMoves(this.board);
+				pieceMoves = MoveUtil.trimCheck(board, pieceMoves, this.board[y][x]);
+
 				moves = ArrayUtil.concat2d(moves, pieceMoves);
 			}
 		}
 
 		moves = ArrayUtil.trim2d(moves, -1);
-
 		return moves;
 	}
 
-	public int getWhitePoints() {
-		return whitePoints;
+	public char teamInCheck() {
+		int[][] moves = this.getMoves();
+		int kings = 0;
+		char[] teams = new char[2];
+
+		for (int[] move : moves) {
+			if (this.board[move[0]][move[1]] instanceof King) {
+				teams[kings] = this.board[move[0]][move[1]].team;
+				kings++;
+			}
+		}
+
+		if (kings == 2) return 'n';
+		else return teams[0];
 	}
 
-	public int getBlackPoints() {
-		return blackPoints;
+	public boolean isCheckmate() {
+		return this.teamInCheck() != 'n' && this.getMoves().length == 0;
 	}
+
+	public int getWhitePoints() { return whitePoints; }
+	public int getBlackPoints() { return blackPoints; }
 }
