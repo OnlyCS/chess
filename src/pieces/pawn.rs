@@ -1,5 +1,7 @@
-use crate::pieces::*;
-use crate::types::*;
+use std::error::Error;
+
+use crate::pieces::piece::Piece;
+use crate::types::{color::Color, coordinate::Coordinate, r#move::Move, piece::PieceType};
 
 pub struct Pawn {
     pub color: Color,
@@ -44,14 +46,14 @@ impl Piece for Pawn {
             Color::White => {
                 if board[x as usize][y as usize + 1].is_empty() {
                     moves.push(Move::new(
-                        self.coords.clone(),
+                        self.coords.copy(),
                         Coordinate::new(x, y + 1),
                         false,
                     ));
 
                     if board[x as usize][y as usize + 2].is_empty() && !self.has_moved {
                         moves.push(Move::new(
-                            self.coords.clone(),
+                            self.coords.copy(),
                             Coordinate::new(x, y + 2),
                             false,
                         ));
@@ -60,7 +62,7 @@ impl Piece for Pawn {
 
                 if x > 0 && !board[x as usize - 1][y as usize + 1].is_empty() {
                     moves.push(Move::new(
-                        self.coords.clone(),
+                        self.coords.copy(),
                         Coordinate::new(x - 1, y + 1),
                         true,
                     ));
@@ -68,7 +70,7 @@ impl Piece for Pawn {
 
                 if x < 7 && !board[x as usize + 1][y as usize + 1].is_empty() {
                     moves.push(Move::new(
-                        self.coords.clone(),
+                        self.coords.copy(),
                         Coordinate::new(x + 1, y + 1),
                         true,
                     ));
@@ -77,14 +79,14 @@ impl Piece for Pawn {
             Color::Black => {
                 if board[x as usize][y as usize - 1].is_empty() {
                     moves.push(Move::new(
-                        self.coords.clone(),
+                        self.coords.copy(),
                         Coordinate::new(x, y - 1),
                         false,
                     ));
 
                     if board[x as usize][y as usize - 2].is_empty() && !self.has_moved {
                         moves.push(Move::new(
-                            self.coords.clone(),
+                            self.coords.copy(),
                             Coordinate::new(x, y - 2),
                             false,
                         ));
@@ -93,7 +95,7 @@ impl Piece for Pawn {
 
                 if x > 0 && !board[x as usize - 1][y as usize - 1].is_empty() {
                     moves.push(Move::new(
-                        self.coords.clone(),
+                        self.coords.copy(),
                         Coordinate::new(x - 1, y - 1),
                         true,
                     ));
@@ -101,7 +103,7 @@ impl Piece for Pawn {
 
                 if x < 7 && !board[x as usize + 1][y as usize - 1].is_empty() {
                     moves.push(Move::new(
-                        self.coords.clone(),
+                        self.coords.copy(),
                         Coordinate::new(x + 1, y - 1),
                         true,
                     ));
@@ -112,8 +114,13 @@ impl Piece for Pawn {
         Vec::new()
     }
 
-    fn move_to(&mut self, to: Coordinate) {
-        self.coords.set(to.x, to.y);
-        self.has_moved = true;
+    fn move_to(&mut self, to: Coordinate) -> Result<(), Box<dyn Error>> {
+        let set = self.coords.set(to.x, to.y);
+
+        if set.is_ok() {
+            self.has_moved = true;
+        }
+
+        set
     }
 }

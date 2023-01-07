@@ -1,5 +1,5 @@
-use crate::pieces::*;
-use crate::types::*;
+use crate::pieces::{piece::Piece, rook::Rook, bishop::Bishop};
+use crate::types::{color::Color, coordinate::Coordinate, r#move::Move, piece::PieceType};
 
 pub struct Queen {
     color: Color,
@@ -32,8 +32,8 @@ impl Piece for Queen {
     fn get_moves(&self, board: &[Vec<Box<dyn Piece>>]) -> Vec<Move> {
         let mut moves = Vec::new();
 
-        moves.extend(Rook::new(self.color.clone(), self.coords.clone()).get_moves(board));
-        moves.extend(Bishop::new(self.color.clone(), self.coords.clone()).get_moves(board));
+        moves.extend(Rook::new(self.color, self.coords.copy()).get_moves(board));
+        moves.extend(Bishop::new(self.color, self.coords.copy()).get_moves(board));
 
         moves
     }

@@ -1,5 +1,5 @@
-use crate::pieces::*;
-use crate::types::*;
+use crate::pieces::piece::Piece;
+use crate::types::{color::Color, coordinate::Coordinate, r#move::Move, piece::PieceType};
 
 pub struct King {
     color: Color,
@@ -46,11 +46,11 @@ impl Piece for King {
         let mut moves = moves_unchecked
             .iter()
             .filter(|mv| !mv.is_oob())
-            .map(|coord| Move::new(self.coords.clone(), coord.clone(), false))
+            .map(|coord| Move::new(self.coords.copy(), coord.copy(), false))
             .collect::<Vec<Move>>();
 
         for piece in board.iter().flatten() {
-            let piece_coords = piece.get_coords().clone();
+            let piece_coords = piece.get_coords().copy();
 
             if piece.get_color() == self.get_color() {
                 moves.retain(|mv| mv.to != piece_coords);

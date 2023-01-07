@@ -1,5 +1,5 @@
-use crate::pieces::*;
-use crate::types::*;
+use crate::pieces::piece::Piece;
+use crate::types::{color::Color, coordinate::Coordinate, r#move::Move, piece::PieceType};
 
 pub struct Bishop {
     color: Color,
@@ -49,7 +49,7 @@ impl Piece for Bishop {
                 if piece.get_color() == self.get_color() {
                     break;
                 } else {
-                    moves.push(Move::new(self.coords.clone(), coord.clone(), true));
+                    moves.push(Move::new(self.coords.copy(), coord.copy(), true));
                     break;
                 }
             }
@@ -70,7 +70,7 @@ impl Piece for Bishop {
                 if piece.get_color() == self.get_color() {
                     break;
                 } else {
-                    moves.push(Move::new(self.coords.clone(), coord.clone(), true));
+                    moves.push(Move::new(self.coords.copy(), coord.copy(), true));
                     break;
                 }
             }
@@ -91,7 +91,7 @@ impl Piece for Bishop {
                 if piece.get_color() == self.get_color() {
                     break;
                 } else {
-                    moves.push(Move::new(self.coords.clone(), coord.clone(), true));
+                    moves.push(Move::new(self.coords.copy(), coord.copy(), true));
                     break;
                 }
             }
@@ -112,7 +112,7 @@ impl Piece for Bishop {
                 if piece.get_color() == self.get_color() {
                     break;
                 } else {
-                    moves.push(Move::new(self.coords.clone(), coord.clone(), true));
+                    moves.push(Move::new(self.coords.copy(), coord.copy(), true));
                     break;
                 }
             }

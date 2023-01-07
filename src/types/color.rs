@@ -1,6 +1,6 @@
 pub enum Color {
-    White,
     Black,
+    White,
 }
 
 impl Color {
@@ -24,15 +24,44 @@ impl Color {
             Color::Black => 'b',
         }
     }
+
+    pub fn flip(&mut self) {
+        match self {
+            Color::White => *self = Color::Black,
+            Color::Black => *self = Color::White,
+        }
+    }
+}
+
+impl TryFrom<i32> for Color {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Color::White),
+            1 => Ok(Color::Black),
+            _ => Err("Invalid Color".into()),
+        }
+    }
+}
+
+impl From<bool> for Color {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Color::White,
+            false => Color::Black,
+        }
+    }
 }
 
 impl PartialEq for Color {
     fn eq(&self, other: &Self) -> bool {
-        matches!((self, other), (Color::White, Color::White) | (Color::Black, Color::Black))
+        matches!(
+            (self, other),
+            (Color::White, Color::White) | (Color::Black, Color::Black)
+        )
     }
 }
-
-impl Eq for Color {}
 
 impl Clone for Color {
     fn clone(&self) -> Self {
@@ -42,3 +71,5 @@ impl Clone for Color {
         }
     }
 }
+
+impl Copy for Color {}
