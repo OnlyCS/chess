@@ -1,5 +1,6 @@
 use crate::pieces::piece::Piece;
-use crate::types::{color::Color, coordinate::Coordinate, r#move::Move, piece::PieceType};
+use crate::types::{color::Color, coordinate::Coordinate, piece::PieceType, r#move::Move};
+use crate::utils::array2d::Array2D;
 
 pub struct Rook {
     color: Color,
@@ -29,7 +30,7 @@ impl Piece for Rook {
         PieceType::Queen
     }
 
-    fn get_moves(&self, board: &[Vec<Box<dyn Piece>>]) -> Vec<Move> {
+    fn get_moves(&self, board: &Array2D<Box<dyn Piece>>) -> Option<Vec<Move>> {
         let mut moves = Vec::new();
         let x = self.coords.x;
         let y = self.coords.y;
@@ -37,11 +38,7 @@ impl Piece for Rook {
         for i in (x..8).chain((0..=x).rev()) {
             let coord = Coordinate::new(i, y);
 
-            if let Some(piece) = board
-                .iter()
-                .flatten()
-                .find(|piece| piece.get_coords() == &coord)
-            {
+            if let Some(piece) = board.flat_iter().find(|piece| piece.get_coords() == &coord) {
                 if piece.get_color() == self.get_color() {
                     break;
                 } else {
@@ -56,11 +53,7 @@ impl Piece for Rook {
         for i in (y..8).chain((0..=y).rev()) {
             let coord = Coordinate::new(x, i);
 
-            if let Some(piece) = board
-                .iter()
-                .flatten()
-                .find(|piece| piece.get_coords() == &coord)
-            {
+            if let Some(piece) = board.flat_iter().find(|piece| piece.get_coords() == &coord) {
                 if piece.get_color() == self.get_color() {
                     break;
                 } else {
@@ -72,6 +65,6 @@ impl Piece for Rook {
             }
         }
 
-        moves
+        Some(moves)
     }
 }

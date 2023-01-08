@@ -1,5 +1,6 @@
 use crate::pieces::piece::Piece;
-use crate::types::{color::Color, coordinate::Coordinate, r#move::Move, piece::PieceType};
+use crate::types::{color::Color, coordinate::Coordinate, piece::PieceType, r#move::Move};
+use crate::utils::array2d::Array2D;
 
 pub struct King {
     color: Color,
@@ -29,7 +30,7 @@ impl Piece for King {
         PieceType::King
     }
 
-    fn get_moves(&self, board: &[Vec<Box<dyn Piece>>]) -> Vec<Move> {
+    fn get_moves(&self, board: &Array2D<Box<dyn Piece>>) -> Option<Vec<Move>> {
         let mut moves_unchecked = Vec::new();
         let x = self.coords.x;
         let y = self.coords.y;
@@ -49,7 +50,7 @@ impl Piece for King {
             .map(|coord| Move::new(self.coords.copy(), coord.copy(), false))
             .collect::<Vec<Move>>();
 
-        for piece in board.iter().flatten() {
+        for piece in board.flat_iter() {
             let piece_coords = piece.get_coords().copy();
 
             if piece.get_color() == self.get_color() {
@@ -63,6 +64,6 @@ impl Piece for King {
             }
         }
 
-        moves
+        Some(moves)
     }
 }

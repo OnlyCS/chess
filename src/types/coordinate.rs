@@ -1,16 +1,16 @@
 use std::error::Error;
 
 pub struct Coordinate {
-    pub x: i32,
-    pub y: i32,
+    pub x: usize,
+    pub y: usize,
 }
 
 impl Coordinate {
-    pub fn new(x: i32, y: i32) -> Coordinate {
+    pub fn new(x: usize, y: usize) -> Coordinate {
         Coordinate { x, y }
     }
 
-    pub fn set(&mut self, x: i32, y: i32) -> Result<(), Box<dyn Error>> {
+    pub fn set(&mut self, x: usize, y: usize) -> Result<(), Box<dyn Error>> {
         if Coordinate::new(x, y).is_oob() {
             return Err("Coordinate out of bounds".into());
         }
@@ -22,7 +22,7 @@ impl Coordinate {
     }
 
     pub fn is_oob(&self) -> bool {
-        self.x < 0 || self.x > 7 || self.y < 0 || self.y > 7
+        self.x > 7 || self.y > 7
     }
 
     // shouldn't implicitly clone

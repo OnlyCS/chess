@@ -1,4 +1,7 @@
-use std::cmp::Ordering;
+use std::{
+    cmp::Ordering,
+    fmt::{Display, Formatter},
+};
 
 pub enum PieceType {
     Empty,
@@ -42,5 +45,19 @@ impl PartialEq for PieceType {
                 | (PieceType::King, PieceType::King)
                 | (PieceType::Empty, PieceType::Empty)
         )
+    }
+}
+
+impl Display for PieceType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PieceType::Empty => write!(f, " "),
+            PieceType::Pawn => write!(f, "P"),
+            PieceType::Knight => write!(f, "Kn"),
+            PieceType::Bishop => write!(f, "B"),
+            PieceType::Rook => write!(f, "R"),
+            PieceType::Queen => write!(f, "Q"),
+            PieceType::King => write!(f, "K"),
+        }
     }
 }

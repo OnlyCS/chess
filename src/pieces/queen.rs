@@ -1,5 +1,7 @@
-use crate::pieces::{piece::Piece, rook::Rook, bishop::Bishop};
-use crate::types::{color::Color, coordinate::Coordinate, r#move::Move, piece::PieceType};
+use crate::pieces::{bishop::Bishop, piece::Piece, rook::Rook};
+use crate::types::{color::Color, coordinate::Coordinate, piece::PieceType, r#move::Move};
+use crate::utils::array2d::Array2D;
+use crate::utils::safe_unwrap::safe_unwrap_option;
 
 pub struct Queen {
     color: Color,
@@ -29,12 +31,20 @@ impl Piece for Queen {
         PieceType::Queen
     }
 
-    fn get_moves(&self, board: &[Vec<Box<dyn Piece>>]) -> Vec<Move> {
-        let mut moves = Vec::new();
+    fn get_moves(&self, board: &Array2D<Box<dyn Piece>>) -> Option<Vec<Move>> {
+        let mut moves: Vec<Move> = Vec::new();
 
-        moves.extend(Rook::new(self.color, self.coords.copy()).get_moves(board));
-        moves.extend(Bishop::new(self.color, self.coords.copy()).get_moves(board));
+        moves.extend(safe_unwrap_option!(Rook::new(
+            self.color,
+            self.coords.copy()
+        )
+        .get_moves(board)));
+        moves.extend(safe_unwrap_option!(Bishop::new(
+            self.color,
+            self.coords.copy()
+        )
+        .get_moves(board)));
 
-        moves
+        Some(moves)
     }
 }
