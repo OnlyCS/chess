@@ -87,3 +87,13 @@ impl<T> Array2D<T> {
         self.to_vec().into_iter()
     }
 }
+
+impl<T> Default for Array2D<T> {
+    fn default() -> Self {
+        Array2D {
+            width: 0,
+            height: 0,
+            data: Vec::new(),
+        }
+    }
+}

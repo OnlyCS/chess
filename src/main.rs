@@ -1,6 +1,9 @@
 #![warn(clippy::unwrap_used, clippy::panic)]
+#![allow(clippy::needless_update)]
 
-use game::game_manager::GameManager;
+use intuitive::terminal::Terminal;
+use crate::ui::root::Root;
+
 
 pub mod game;
 pub mod pieces;
@@ -9,14 +12,7 @@ pub mod ui;
 pub mod utils;
 
 fn main() {
-    let game = GameManager::new();
+    let mut terminal = Terminal::new(Root::new()).expect("Failed to create UI");
 
-    // flat_iter() the game.board and print, with a new ln every 8
-
-    game.board.flat_iter().enumerate().for_each(|(i, piece)| {
-        print!("{} ", piece);
-        if i % 8 == 7 {
-            println!();
-        }
-    });
+    terminal.run().expect("Failed to run UI");
 }
