@@ -20,6 +20,30 @@ impl Position {
     pub fn is_oob(&self) -> bool {
         self.file < FileLetter::A || self.file > FileLetter::H || self.rank < 1 || self.rank > 8
     }
+
+    pub fn up(&mut self) {
+        if self.rank < 8 {
+            self.rank += 1;
+        }
+    }
+
+    pub fn down(&mut self) {
+        if self.rank > 1 {
+            self.rank -= 1;
+        }
+    }
+
+    pub fn left(&mut self) {
+        if self.file > FileLetter::A {
+            self.file -= 1;
+        }
+    }
+
+    pub fn right(&mut self) {
+        if self.file < FileLetter::H {
+            self.file += 1;
+        }
+    }
 }
 
 impl PartialEq for Position {

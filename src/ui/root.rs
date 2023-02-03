@@ -1,122 +1,111 @@
-use crossterm::terminal::size;
-use intuitive::components::*;
-use intuitive::*;
+use intuitive::{components::*, event::handler::Propagate, state::use_state, *};
 
-use crate::game::game_manager::GameManager;
-use crate::ui::tile::Tile;
+use crate::{game::chess::Chess, parts::position::Position};
 
-use super::with_size::{board_flex, get_instructions};
+use super::selection::{Selection, SelectionMode};
 
 #[component(Root)]
 pub fn render() {
-    let game = GameManager::new();
+    // define a game
+    let game = Chess::default();
 
-    let key_handler = on_key! {
-        KeyEvent { code: Char('q'), .. } => event::quit(),
+    // create states for storing selections
+    let select_mode = use_state(|| SelectionMode::SelectPiece);
+    let selection = use_state(|| Selection {
+        hover: Position::default(),
+        selected: None,
+        avaliable: vec![],
+    });
+
+    // define key handler
+    let key_hander = {
+        use super::selection::SelectionMode;
+
+        move |event| {
+            match select_mode.get() {
+                SelectionMode::SelectPiece => {
+                    use intuitive::event::{
+                        self,
+                        KeyCode::{self, *},
+                        KeyEvent,
+                    };
+
+                    match event {
+                        KeyEvent {
+                            code: Char('q'), ..
+                        } => event::quit(),
+                        KeyEvent {
+                            code: Char('w'), ..
+                        } => selection.mutate(|s| s.hover.up()),
+                        KeyEvent {
+                            code: Char('a'), ..
+                        } => selection.mutate(|s| s.hover.left()),
+                        KeyEvent {
+                            code: Char('s'), ..
+                        } => selection.mutate(|s| s.hover.down()),
+                        KeyEvent {
+                            code: Char('d'), ..
+                        } => selection.mutate(|s| s.hover.right()),
+                        KeyEvent {
+                            code: KeyCode::Enter,
+                            ..
+                        } => {
+                            select_mode.set(SelectionMode::SelectMove);
+                            selection.mutate(|s| {
+                                s.selected = Some(s.hover.copy());
+                                s.avaliable = game
+                                    .get_board()
+                                    .square(&s.hover)
+                                    .expect("No piece at selected position")
+                                    .get_piece()
+                                    .expect("No piece at selected position")
+                                    .get_moves(game.get_board())
+                                    .iter()
+                                    .map(|p| p.clone().to)
+                                    .collect();
+                            });
+                        }
+
+                        _ => (),
+                    }
+                }
+
+                SelectionMode::SelectMove => {
+                    use intuitive::event::{self, KeyCode::*, KeyEvent};
+
+                    match event {
+                        KeyEvent {
+                            code: Char('q'), ..
+                        } => event::quit(),
+                        KeyEvent {
+                            code: Char('w'), ..
+                        } => selection.mutate(|s| s.hover.up()),
+                        KeyEvent {
+                            code: Char('a'), ..
+                        } => selection.mutate(|s| s.hover.left()),
+                        KeyEvent {
+                            code: Char('s'), ..
+                        } => selection.mutate(|s| s.hover.down()),
+                        KeyEvent {
+                            code: Char('d'), ..
+                        } => selection.mutate(|s| s.hover.right()),
+                        KeyEvent { code: Esc, .. } => {
+                            select_mode.set(SelectionMode::SelectPiece);
+
+                            selection.mutate(|s| {
+                                s.selected = None;
+                                s.avaliable = vec![];
+                            });
+                        }
+                        _ => (),
+                    }
+                }
+            };
+            Propagate::Next
+        }
     };
 
-    let size = size().expect("Failed to get terminal size");
-
-    let instructions = get_instructions(size);
-    let bflex = board_flex(size);
-
     render! {
-        VStack(on_key: key_handler, flex: [bflex.2, bflex.3]) {
-            HStack(on_key: key_handler, flex: [bflex.0, bflex.1]) {
-                Section(title: "Board") {
-                    VStack() {
-                        HStack() {
-                            Tile(piece_str: game.board.get(0, 0).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(1, 0).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(2, 0).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(3, 0).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(4, 0).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(5, 0).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(6, 0).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(7, 0).expect("Failed to get board").to_string())
-                        }
-                        HStack() {
-                            Tile(piece_str: game.board.get(0, 1).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(1, 1).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(2, 1).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(3, 1).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(4, 1).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(5, 1).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(6, 1).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(7, 1).expect("Failed to get board").to_string())
-                        }
-                        HStack() {
-                            Tile(piece_str: game.board.get(0, 2).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(1, 2).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(2, 2).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(3, 2).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(4, 2).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(5, 2).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(6, 2).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(7, 2).expect("Failed to get board").to_string())
-                        }
-                        HStack() {
-                            Tile(piece_str: game.board.get(0, 3).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(1, 3).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(2, 3).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(3, 3).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(4, 3).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(5, 3).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(6, 3).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(7, 3).expect("Failed to get board").to_string())
-                        }
-                        HStack() {
-                            Tile(piece_str: game.board.get(0, 4).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(1, 4).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(2, 4).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(3, 4).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(4, 4).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(5, 4).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(6, 4).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(7, 4).expect("Failed to get board").to_string())
-                        }
-                        HStack() {
-                            Tile(piece_str: game.board.get(0, 5).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(1, 5).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(2, 5).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(3, 5).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(4, 5).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(5, 5).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(6, 5).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(7, 5).expect("Failed to get board").to_string())
-                        }
-                        HStack() {
-                            Tile(piece_str: game.board.get(0, 6).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(1, 6).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(2, 6).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(3, 6).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(4, 6).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(5, 6).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(6, 6).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(7, 6).expect("Failed to get board").to_string())
-                        }
-                        HStack() {
-                            Tile(piece_str: game.board.get(0, 7).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(1, 7).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(2, 7).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(3, 7).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(4, 7).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(5, 7).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(6, 7).expect("Failed to get board").to_string())
-                            Tile(piece_str: game.board.get(7, 7).expect("Failed to get board").to_string())
-                        }
-                    }
-                }
-
-                Section(title: "Instructions") {
-                    Centered() {
-                        VStack() {
-                            Text(text: instructions)
-                        }
-                    }
-                }
-            }
-            Section(title: "e") {}
-        }
+        Text(text: "Hello, world!")
     }
 }

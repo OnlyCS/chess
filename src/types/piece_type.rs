@@ -4,7 +4,6 @@ use std::{
 };
 
 pub enum PieceType {
-    Empty,
     Pawn,
     Knight,
     Bishop,
@@ -16,7 +15,6 @@ pub enum PieceType {
 impl PieceType {
     pub fn get_value(&self) -> i32 {
         match self {
-            PieceType::Empty => 0,
             PieceType::Pawn => 1,
             PieceType::Knight => 3,
             PieceType::Bishop => 3,
@@ -43,7 +41,6 @@ impl PartialEq for PieceType {
                 | (PieceType::Rook, PieceType::Rook)
                 | (PieceType::Queen, PieceType::Queen)
                 | (PieceType::King, PieceType::King)
-                | (PieceType::Empty, PieceType::Empty)
         )
     }
 }
@@ -51,7 +48,6 @@ impl PartialEq for PieceType {
 impl Display for PieceType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            PieceType::Empty => write!(f, " "),
             PieceType::Pawn => write!(f, "P"),
             PieceType::Knight => write!(f, "Kn"),
             PieceType::Bishop => write!(f, "B"),

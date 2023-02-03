@@ -32,7 +32,6 @@ pub trait Piece {
                 PieceType::Bishop => unicode_from_hex("2657"),
                 PieceType::Queen => unicode_from_hex("2655"),
                 PieceType::King => unicode_from_hex("2654"),
-                PieceType::Empty => Ok(" ".to_string().chars().next().expect("Unknown Error")),
             },
             Color::Black => match self.get_type() {
                 PieceType::Pawn => unicode_from_hex("265F"),
@@ -41,7 +40,6 @@ pub trait Piece {
                 PieceType::Bishop => unicode_from_hex("265D"),
                 PieceType::Queen => unicode_from_hex("265B"),
                 PieceType::King => unicode_from_hex("265A"),
-                PieceType::Empty => Ok(" ".to_string().chars().next().expect("Unknown Error")),
             },
         }
         .expect("Unknown Error")
