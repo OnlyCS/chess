@@ -1,15 +1,14 @@
 #![warn(clippy::unwrap_used, clippy::panic)]
-#![allow(clippy::needless_update)]
+#![allow(clippy::needless_update, clippy::borrowed_box)]
 
-use intuitive::terminal::Terminal;
 use crate::ui::root::Root;
-
+use intuitive::terminal::Terminal;
 
 pub mod game;
+pub mod parts;
 pub mod pieces;
 pub mod types;
 pub mod ui;
-pub mod utils;
 
 fn main() {
     let mut terminal = Terminal::new(Root::new()).expect("Failed to create UI");

@@ -1,16 +1,18 @@
-use crate::pieces::{bishop::Bishop, piece::Piece, rook::Rook};
-use crate::types::{color::Color, coordinate::Coordinate, piece::PieceType, r#move::Move};
-use crate::utils::array2d::Array2D;
-use crate::utils::safe_unwrap::safe_unwrap_option;
+use crate::{
+    parts::{board::Board, position::Position},
+    types::{color::Color, piece_type::PieceType, r#move::Move},
+};
+
+use super::{bishop::Bishop, piece::Piece, rook::Rook};
 
 pub struct Queen {
     color: Color,
-    coords: Coordinate,
+    position: Position,
 }
 
 impl Queen {
-    pub fn new(color: Color, coords: Coordinate) -> Queen {
-        Queen { color, coords }
+    pub fn new(color: Color, position: Position) -> Self {
+        Self { color, position }
     }
 }
 
@@ -19,32 +21,31 @@ impl Piece for Queen {
         &self.color
     }
 
-    fn get_coords(&self) -> &Coordinate {
-        &self.coords
-    }
-
-    fn get_coords_mut(&mut self) -> &mut Coordinate {
-        &mut self.coords
+    fn get_position(&self) -> &Position {
+        &self.position
     }
 
     fn get_type(&self) -> PieceType {
         PieceType::Queen
     }
 
-    fn get_moves(&self, board: &Array2D<Box<dyn Piece>>) -> Option<Vec<Move>> {
-        let mut moves: Vec<Move> = Vec::new();
+    fn get_moves(&self, board: &Board) -> Vec<Move> {
+        let mut moves = Vec::new();
 
-        moves.extend(safe_unwrap_option!(Rook::new(
-            self.color,
-            self.coords.copy()
-        )
-        .get_moves(board)));
-        moves.extend(safe_unwrap_option!(Bishop::new(
-            self.color,
-            self.coords.copy()
-        )
-        .get_moves(board)));
+        moves.extend(Rook::new(self.color, self.position.clone()).get_moves(board));
+        moves.extend(Bishop::new(self.color, self.position.clone()).get_moves(board));
 
-        Some(moves)
+        moves
+    }
+
+    fn copy(&self) -> Box<dyn Piece> {
+        Box::new(Self {
+            color: self.color,
+            position: self.position.clone(),
+        })
+    }
+
+    fn set_position(&mut self, position: Position) {
+        self.position = position;
     }
 }

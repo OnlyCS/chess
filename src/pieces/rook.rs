@@ -1,15 +1,38 @@
-use crate::pieces::piece::Piece;
-use crate::types::{color::Color, coordinate::Coordinate, piece::PieceType, r#move::Move};
-use crate::utils::array2d::Array2D;
+use crate::{
+    parts::{board::Board, position::Position},
+    types::{
+        color::Color,
+        piece_type::PieceType,
+        r#move::{Move, MoveModifier},
+    },
+};
+
+use super::piece::{Piece, PieceData};
 
 pub struct Rook {
     color: Color,
-    coords: Coordinate,
+    position: Position,
+    data: PieceData,
 }
 
 impl Rook {
-    pub fn new(color: Color, coords: Coordinate) -> Self {
-        Rook { color, coords }
+    pub fn new(color: Color, position: Position) -> Self {
+        Self {
+            data: PieceData {
+                can_en_passant: false,
+                can_double_move: false,
+                can_castle: match color {
+                    Color::White => {
+                        position == Position::new(1, 1) || position == Position::new(8, 1)
+                    }
+                    Color::Black => {
+                        position == Position::new(1, 8) || position == Position::new(8, 8)
+                    }
+                },
+            },
+            color,
+            position,
+        }
     }
 }
 
@@ -18,53 +41,131 @@ impl Piece for Rook {
         &self.color
     }
 
-    fn get_coords(&self) -> &Coordinate {
-        &self.coords
-    }
-
-    fn get_coords_mut(&mut self) -> &mut Coordinate {
-        &mut self.coords
+    fn get_position(&self) -> &Position {
+        &self.position
     }
 
     fn get_type(&self) -> PieceType {
-        PieceType::Queen
+        PieceType::Rook
     }
 
-    fn get_moves(&self, board: &Array2D<Box<dyn Piece>>) -> Option<Vec<Move>> {
+    fn get_moves(&self, board: &Board) -> Vec<Move> {
         let mut moves = Vec::new();
-        let x = self.coords.x;
-        let y = self.coords.y;
 
-        for i in (x..8).chain((0..=x).rev()) {
-            let coord = Coordinate::new(i, y);
+        //top
+        for i in 1..8 {
+            let mut position = self.position.clone();
 
-            if let Some(piece) = board.flat_iter().find(|piece| piece.get_coords() == &coord) {
-                if piece.get_color() == self.get_color() {
+            position.rank += i;
+
+            if let Some(square) = board.square(&position) {
+                if let Some(piece) = square.get_piece() {
+                    if *piece.get_color() != self.color {
+                        moves.push(Move::new(
+                            self.position.clone(),
+                            position,
+                            Some(vec![MoveModifier::Capture]),
+                        ));
+                    }
+
                     break;
                 } else {
-                    moves.push(Move::new(self.coords.copy(), coord.copy(), true));
-                    break;
+                    moves.push(Move::new(self.position.clone(), position, None));
                 }
             } else {
-                moves.push(Move::new(self.coords.copy(), coord.copy(), false));
+                break;
             }
         }
 
-        for i in (y..8).chain((0..=y).rev()) {
-            let coord = Coordinate::new(x, i);
+        //right
+        for i in 1..8 {
+            let mut position = self.position.clone();
 
-            if let Some(piece) = board.flat_iter().find(|piece| piece.get_coords() == &coord) {
-                if piece.get_color() == self.get_color() {
+            position.file += i;
+
+            if let Some(square) = board.square(&position) {
+                if let Some(piece) = square.get_piece() {
+                    if *piece.get_color() != self.color {
+                        moves.push(Move::new(
+                            self.position.clone(),
+                            position,
+                            Some(vec![MoveModifier::Capture]),
+                        ));
+                    }
+
                     break;
                 } else {
-                    moves.push(Move::new(self.coords.copy(), coord.copy(), true));
-                    break;
+                    moves.push(Move::new(self.position.clone(), position, None));
                 }
             } else {
-                moves.push(Move::new(self.coords.copy(), coord.copy(), false));
+                break;
             }
         }
 
-        Some(moves)
+        //bottom
+        for i in 1..8 {
+            let mut position = self.position.clone();
+
+            position.rank -= i;
+
+            if let Some(square) = board.square(&position) {
+                if let Some(piece) = square.get_piece() {
+                    if *piece.get_color() != self.color {
+                        moves.push(Move::new(
+                            self.position.clone(),
+                            position,
+                            Some(vec![MoveModifier::Capture]),
+                        ));
+                    }
+
+                    break;
+                } else {
+                    moves.push(Move::new(self.position.clone(), position, None));
+                }
+            } else {
+                break;
+            }
+        }
+
+        //left
+        for i in 1..8 {
+            let mut position = self.position.clone();
+
+            position.file -= i;
+
+            if let Some(square) = board.square(&position) {
+                if let Some(piece) = square.get_piece() {
+                    if *piece.get_color() != self.color {
+                        moves.push(Move::new(
+                            self.position.clone(),
+                            position,
+                            Some(vec![MoveModifier::Capture]),
+                        ));
+                    }
+
+                    break;
+                } else {
+                    moves.push(Move::new(self.position.clone(), position, None));
+                }
+            } else {
+                break;
+            }
+        }
+
+        moves.retain(|m| !m.to.is_oob() && !m.from.is_oob());
+
+        moves
+    }
+
+    fn copy(&self) -> Box<dyn Piece> {
+        Box::new(Self {
+            color: self.color,
+            position: self.position.clone(),
+            data: self.data.clone(),
+        })
+    }
+
+    fn set_position(&mut self, position: Position) {
+        self.position = position;
     }
 }

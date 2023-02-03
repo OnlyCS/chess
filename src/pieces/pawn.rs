@@ -1,22 +1,33 @@
-use std::error::Error;
+use crate::{
+    parts::{board::Board, position::Position},
+    types::{
+        color::Color,
+        piece_type::PieceType,
+        r#move::{Move, MoveModifier},
+    },
+};
 
-use crate::pieces::piece::Piece;
-use crate::types::{color::Color, coordinate::Coordinate, piece::PieceType, r#move::Move};
-use crate::utils::array2d::Array2D;
-use crate::utils::safe_unwrap::safe_unwrap_option;
+use super::piece::{Piece, PieceData};
 
 pub struct Pawn {
-    pub color: Color,
-    pub coords: Coordinate,
-    pub has_moved: bool,
+    color: Color,
+    position: Position,
+    pub data: PieceData,
 }
 
 impl Pawn {
-    pub fn new(color: Color, coords: Coordinate) -> Pawn {
-        Pawn {
+    pub fn new(color: Color, position: Position) -> Self {
+        Self {
+            data: PieceData {
+                can_en_passant: false,
+                can_double_move: match color {
+                    Color::White => position.rank == 2,
+                    Color::Black => position.rank == 7,
+                },
+                can_castle: false,
+            },
             color,
-            coords,
-            has_moved: false,
+            position,
         }
     }
 }
@@ -26,121 +37,126 @@ impl Piece for Pawn {
         &self.color
     }
 
-    fn get_coords(&self) -> &Coordinate {
-        &self.coords
-    }
-
-    fn get_coords_mut(&mut self) -> &mut Coordinate {
-        &mut self.coords
+    fn get_position(&self) -> &Position {
+        &self.position
     }
 
     fn get_type(&self) -> PieceType {
         PieceType::Pawn
     }
 
-    fn get_moves(&self, board: &Array2D<Box<dyn Piece>>) -> Option<Vec<Move>> {
+    fn get_moves(&self, board: &Board) -> Vec<Move> {
         let mut moves = Vec::new();
 
-        let x = self.coords.x;
-        let y = self.coords.y;
-
-        match self.color {
-            Color::White => {
-                if !Coordinate::new(x, y + 1).is_oob()
-                    && safe_unwrap_option!(board.get(x, y + 1)).is_empty()
-                {
+        // check a double move
+        if self.data.can_double_move {
+            if let Some(square) = board.square(&Position::new(
+                self.position.clone().file,
+                self.position.rank + 2,
+            )) {
+                if square.is_empty() {
                     moves.push(Move::new(
-                        self.coords.copy(),
-                        Coordinate::new(x, y + 1),
-                        false,
-                    ));
-
-                    if !Coordinate::new(x, y + 2).is_oob()
-                        && safe_unwrap_option!(board.get(x, y + 2)).is_empty()
-                        && !self.has_moved
-                    {
-                        moves.push(Move::new(
-                            self.coords.copy(),
-                            Coordinate::new(x, y + 2),
-                            false,
-                        ));
-                    }
-                }
-
-                if !Coordinate::new(x - 1, y + 1).is_oob()
-                    && !safe_unwrap_option!(board.get(x - 1, y + 1)).is_empty()
-                {
-                    moves.push(Move::new(
-                        self.coords.copy(),
-                        Coordinate::new(x - 1, y + 1),
-                        true,
-                    ));
-                }
-
-                if !Coordinate::new(x + 1, y + 1).is_oob()
-                    && !safe_unwrap_option!(board.get(x + 1, y + 1)).is_empty()
-                {
-                    moves.push(Move::new(
-                        self.coords.copy(),
-                        Coordinate::new(x + 1, y + 1),
-                        true,
-                    ));
-                }
-            }
-            Color::Black => {
-                if !Coordinate::new(x, y - 1).is_oob()
-                    && safe_unwrap_option!(board.get(x, y - 1)).is_empty()
-                {
-                    moves.push(Move::new(
-                        self.coords.copy(),
-                        Coordinate::new(x, y - 1),
-                        false,
-                    ));
-
-                    if !Coordinate::new(x, y - 2).is_oob()
-                        && safe_unwrap_option!(board.get(x, y - 2)).is_empty()
-                        && !self.has_moved
-                    {
-                        moves.push(Move::new(
-                            self.coords.copy(),
-                            Coordinate::new(x, y - 2),
-                            false,
-                        ));
-                    }
-                }
-
-                if !Coordinate::new(x - 1, y - 1).is_oob()
-                    && !safe_unwrap_option!(board.get(x - 1, y - 1)).is_empty()
-                {
-                    moves.push(Move::new(
-                        self.coords.copy(),
-                        Coordinate::new(x - 1, y - 1),
-                        true,
-                    ));
-                }
-
-                if !Coordinate::new(x + 1, y - 1).is_oob()
-                    && !safe_unwrap_option!(board.get(x + 1, y - 1)).is_empty()
-                {
-                    moves.push(Move::new(
-                        self.coords.copy(),
-                        Coordinate::new(x + 1, y - 1),
-                        true,
+                        self.position.clone(),
+                        Position::new(self.position.clone().file, self.position.rank + 2),
+                        None,
                     ));
                 }
             }
         }
 
-        Some(moves)
+        // check a single move
+        if let Some(square) = board.square(&Position::new(
+            self.position.clone().file,
+            self.position.rank + 1,
+        )) {
+            if square.is_empty() {
+                moves.push(Move::new(
+                    self.position.clone(),
+                    Position::new(self.position.clone().file, self.position.rank + 1),
+                    None,
+                ));
+            }
+        }
+
+        // check capture to right
+        if let Some(square) = board.square(&Position::new(
+            self.position.clone().file + 1,
+            self.position.rank + 1,
+        )) {
+            if let Some(piece) = square.get_piece() {
+                if piece.get_color() != self.get_color() {
+                    moves.push(Move::new(
+                        self.position.clone(),
+                        Position::new(self.position.clone().file + 1, self.position.rank + 1),
+                        None,
+                    ));
+                }
+            }
+        }
+
+        // check capture to left
+        if let Some(square) = board.square(&Position::new(
+            self.position.clone().file - 1,
+            self.position.rank + 1,
+        )) {
+            if let Some(piece) = square.get_piece() {
+                if piece.get_color() != self.get_color() {
+                    moves.push(Move::new(
+                        self.position.clone(),
+                        Position::new(self.position.clone().file - 1, self.position.rank + 1),
+                        None,
+                    ));
+                }
+            }
+        }
+
+        // check en-passant exists to the left
+        if let Some(ep_square) = board.square(&Position::new(
+            self.position.clone().file + 1,
+            self.position.rank,
+        )) {
+            if let Some(ep_piece) = ep_square.get_piece() {
+                if ep_piece.get_color() != self.get_color()
+                    && ep_piece.get_type() == PieceType::Pawn
+                    && ep_piece.get_data().expect("unreachable").can_en_passant
+                {
+                    moves.push(Move::new(
+                        self.position.clone(),
+                        Position::new(self.position.clone().file + 1, self.position.rank + 1),
+                        None,
+                    ));
+                }
+            }
+        }
+
+        for m in moves.iter_mut() {
+            let mut modifiers = Vec::new();
+
+            if let Some(mods) = m.clone().modifiers {
+                modifiers.extend(mods);
+            }
+
+            if m.to.rank == 8 && self.color == Color::White
+                || m.to.rank == 1 && self.color == Color::Black
+            {
+                modifiers.push(MoveModifier::Promotion);
+            }
+
+            m.modifiers = Some(modifiers);
+        }
+
+        moves
     }
 
-    fn move_to(&mut self, to: Coordinate) -> Result<(), Box<dyn Error>> {
-        let set = self.coords.set(to.x, to.y);
+    fn copy(&self) -> Box<dyn Piece> {
+        Box::new(Self {
+            color: self.color,
+            position: self.position.clone(),
+            data: self.data.clone(),
+        })
+    }
 
-        if set.is_ok() {
-            self.has_moved = true;
-        }
-
-        set
+    fn set_position(&mut self, position: Position) {
+        self.position = position;
     }
 }

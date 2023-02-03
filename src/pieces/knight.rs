@@ -1,15 +1,22 @@
-use crate::pieces::piece::Piece;
-use crate::types::{color::Color, coordinate::Coordinate, piece::PieceType, r#move::Move};
-use crate::utils::array2d::Array2D;
+use crate::{
+    parts::{board::Board, position::Position},
+    types::{
+        color::Color,
+        piece_type::PieceType,
+        r#move::{Move, MoveModifier},
+    },
+};
+
+use super::piece::Piece;
 
 pub struct Knight {
     color: Color,
-    coords: Coordinate,
+    position: Position,
 }
 
 impl Knight {
-    pub fn new(color: Color, coords: Coordinate) -> Self {
-        Knight { color, coords }
+    pub fn new(color: Color, position: Position) -> Self {
+        Self { color, position }
     }
 }
 
@@ -18,52 +25,88 @@ impl Piece for Knight {
         &self.color
     }
 
-    fn get_coords(&self) -> &Coordinate {
-        &self.coords
-    }
-
-    fn get_coords_mut(&mut self) -> &mut Coordinate {
-        &mut self.coords
+    fn get_position(&self) -> &Position {
+        &self.position
     }
 
     fn get_type(&self) -> PieceType {
         PieceType::Knight
     }
 
-    fn get_moves(&self, board: &Array2D<Box<dyn Piece>>) -> Option<Vec<Move>> {
-        let mut moves_unchecked = Vec::new();
-        let x = self.coords.x;
-        let y = self.coords.y;
+    fn get_moves(&self, board: &Board) -> Vec<Move> {
+        let mut moves = vec![
+            Move::new(
+                self.position.clone(),
+                Position::new(self.position.clone().file + 1, self.position.rank + 2),
+                None,
+            ),
+            Move::new(
+                self.position.clone(),
+                Position::new(self.position.clone().file + 1, self.position.rank - 2),
+                None,
+            ),
+            Move::new(
+                self.position.clone(),
+                Position::new(self.position.clone().file - 1, self.position.rank + 2),
+                None,
+            ),
+            Move::new(
+                self.position.clone(),
+                Position::new(self.position.clone().file - 1, self.position.rank - 2),
+                None,
+            ),
+            Move::new(
+                self.position.clone(),
+                Position::new(self.position.clone().file + 2, self.position.rank + 1),
+                None,
+            ),
+            Move::new(
+                self.position.clone(),
+                Position::new(self.position.clone().file + 2, self.position.rank - 1),
+                None,
+            ),
+            Move::new(
+                self.position.clone(),
+                Position::new(self.position.clone().file - 2, self.position.rank + 1),
+                None,
+            ),
+            Move::new(
+                self.position.clone(),
+                Position::new(self.position.clone().file - 2, self.position.rank - 1),
+                None,
+            ),
+        ];
 
-        moves_unchecked.push(Coordinate::new(x + 1, y + 2));
-        moves_unchecked.push(Coordinate::new(x + 1, y - 2));
-        moves_unchecked.push(Coordinate::new(x - 1, y + 2));
-        moves_unchecked.push(Coordinate::new(x - 1, y - 2));
-        moves_unchecked.push(Coordinate::new(x + 2, y + 1));
-        moves_unchecked.push(Coordinate::new(x + 2, y - 1));
-        moves_unchecked.push(Coordinate::new(x - 2, y + 1));
-        moves_unchecked.push(Coordinate::new(x - 2, y - 1));
-
-        let mut moves = moves_unchecked
-            .iter()
-            .filter(|coord| !coord.is_oob())
-            .map(|coord| Move::new(self.coords.copy(), coord.copy(), false))
-            .collect::<Vec<Move>>();
-
-        for piece in board.flat_iter() {
-            let piece_coords = piece.get_coords().copy();
-
-            if piece.get_color() == self.get_color() {
-                moves.retain(|mv| mv.to != piece_coords);
-            } else {
-                for mv in moves.iter_mut() {
-                    if mv.to == piece_coords {
-                        mv.is_take = true;
+        let mut remove = Vec::new();
+        for (i, m) in moves.iter_mut().enumerate() {
+            if let Some(square) = board.square(&m.to) {
+                if let Some(piece) = square.get_piece() {
+                    if piece.get_color() == &self.color {
+                        remove.push(i);
+                    } else {
+                        m.modifiers = Some(vec![MoveModifier::Capture]);
                     }
                 }
+            } else {
+                remove.push(i);
             }
         }
 
-        Some(moves)
+        for i in remove.iter().rev() {
+            moves.remove(*i);
+        }
+
+        moves
+    }
+
+    fn copy(&self) -> Box<dyn Piece> {
+        Box::new(Self {
+            color: self.color,
+            position: self.position.clone(),
+        })
+    }
+
+    fn set_position(&mut self, position: Position) {
+        self.position = position;
     }
 }

@@ -1,28 +1,28 @@
-use crate::{
-    types::{color::Color, coordinate::Coordinate, piece::PieceType, r#move::Move},
-    utils::{array2d::Array2D, unicode::unicode_from_hex},
-};
 use std::{error::Error, fmt::Display};
 
+use crate::{
+    parts::{board::Board, position::Position},
+    types::{color::Color, piece_type::PieceType, r#move::Move},
+};
+
+pub fn unicode_from_hex(hex: &str) -> Result<char, Box<dyn Error>> {
+    let code = u32::from_str_radix(hex, 16)?;
+    let chr = std::char::from_u32(code).ok_or("Invalid unicode code")?;
+    Ok(chr)
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PieceData {
+    pub can_en_passant: bool,
+    pub can_double_move: bool,
+    pub can_castle: bool,
+}
+
 pub trait Piece {
-    fn get_coords(&self) -> &Coordinate;
     fn get_color(&self) -> &Color;
+    fn get_position(&self) -> &Position;
     fn get_type(&self) -> PieceType;
-    fn get_moves(&self, board: &Array2D<Box<dyn Piece>>) -> Option<Vec<Move>>;
-    fn get_coords_mut(&mut self) -> &mut Coordinate;
-
-    fn is_empty(&self) -> bool {
-        self.get_type() == PieceType::Empty
-    }
-
-    fn move_to(&mut self, to: Coordinate) -> Result<(), Box<dyn Error>> {
-        self.get_coords_mut().set(to.x, to.y)
-    }
-
-    fn get_value(&self) -> i32 {
-        self.get_type().get_value()
-    }
-
+    fn get_moves(&self, board: &Board) -> Vec<Move>;
     fn to_string(&self) -> String {
         match *self.get_color() {
             Color::White => match self.get_type() {
@@ -47,6 +47,12 @@ pub trait Piece {
         .expect("Unknown Error")
         .to_string()
     }
+
+    fn get_data(&self) -> Option<&PieceData> {
+        None
+    }
+    fn copy(&self) -> Box<dyn Piece>;
+    fn set_position(&mut self, position: Position);
 }
 
 impl Display for dyn Piece {
@@ -55,48 +61,8 @@ impl Display for dyn Piece {
     }
 }
 
-pub struct Empty {
-    color: Color,
-    coords: Coordinate,
-}
-
-impl Empty {
-    pub fn new() -> Empty {
-        Empty {
-            color: Color::White,
-            coords: Coordinate::new(0, 0),
-        }
-    }
-}
-
-impl Default for Empty {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Piece for Empty {
-    fn get_color(&self) -> &Color {
-        &self.color
-    }
-
-    fn get_coords(&self) -> &Coordinate {
-        &self.coords
-    }
-
-    fn get_coords_mut(&mut self) -> &mut Coordinate {
-        &mut self.coords
-    }
-
-    fn get_type(&self) -> PieceType {
-        PieceType::Empty
-    }
-
-    fn get_moves(&self, _board: &Array2D<Box<dyn Piece>>) -> Option<Vec<Move>> {
-        Some(Vec::new())
-    }
-
-    fn move_to(&mut self, _to: Coordinate) -> Result<(), Box<dyn Error>> {
-        Err("Cannot move empty piece".into())
+impl Clone for Box<dyn Piece> {
+    fn clone(&self) -> Self {
+        self.copy()
     }
 }

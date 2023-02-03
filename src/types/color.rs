@@ -26,9 +26,13 @@ impl Color {
     }
 
     pub fn flip(&mut self) {
+        *self = self.other();
+    }
+
+    pub fn other(&self) -> Color {
         match self {
-            Color::White => *self = Color::Black,
-            Color::Black => *self = Color::White,
+            Color::White => Color::Black,
+            Color::Black => Color::White,
         }
     }
 }

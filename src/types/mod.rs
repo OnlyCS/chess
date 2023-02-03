@@ -1,4 +1,5 @@
 pub mod color;
-pub mod coordinate;
+pub mod etc;
+pub mod file_letter;
 pub mod r#move;
-pub mod piece;
+pub mod piece_type;
