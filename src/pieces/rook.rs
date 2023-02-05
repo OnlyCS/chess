@@ -2,6 +2,7 @@ use crate::{
     parts::{board::Board, position::Position},
     types::{
         color::Color,
+        file_letter::FileLetter,
         piece_type::PieceType,
         r#move::{Move, MoveModifier},
     },
@@ -21,14 +22,7 @@ impl Rook {
             data: PieceData {
                 can_en_passant: false,
                 can_double_move: false,
-                can_castle: match color {
-                    Color::White => {
-                        position == Position::new(1, 1) || position == Position::new(8, 1)
-                    }
-                    Color::Black => {
-                        position == Position::new(1, 8) || position == Position::new(8, 8)
-                    }
-                },
+                can_castle: position.file == FileLetter::A || position.file == FileLetter::H,
             },
             color,
             position,

@@ -1,22 +1,30 @@
+use super::selection::SelectionType;
+
+#[derive(Debug, Clone)]
 pub struct UIFileData {
-    pub data: [String; 8],
+    pub pieces: Vec<String>,
+    pub select: Vec<Option<SelectionType>>,
 }
 
-impl From<Vec<String>> for UIFileData {
-    fn from(data: Vec<String>) -> Self {
-        let mut data = data;
-        data.reverse();
+#[derive(Debug, Clone)]
+pub struct SelectData {
+    pub selection: Option<SelectionType>,
+    pub piece: String,
+}
+
+impl UIFileData {
+    pub fn create_from(data: Vec<SelectData>) -> Self {
+        let mut pieces = Vec::new();
+        let mut selections = Vec::new();
+
+        for d in data {
+            pieces.push(d.piece);
+            selections.push(d.selection);
+        }
+
         Self {
-            data: [
-                data[0].clone(),
-                data[1].clone(),
-                data[2].clone(),
-                data[3].clone(),
-                data[4].clone(),
-                data[5].clone(),
-                data[6].clone(),
-                data[7].clone(),
-            ],
+            pieces,
+            select: selections,
         }
     }
 }

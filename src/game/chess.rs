@@ -30,3 +30,12 @@ impl Default for Chess {
         Self::new(Board::new())
     }
 }
+
+impl Clone for Chess {
+    fn clone(&self) -> Self {
+        Self {
+            board: self.board.clone(),
+            turn: self.turn,
+        }
+    }
+}

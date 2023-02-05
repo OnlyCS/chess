@@ -1,3 +1,4 @@
+pub mod board;
 pub mod data;
 pub mod file;
 pub mod root;

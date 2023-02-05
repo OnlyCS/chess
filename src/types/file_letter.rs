@@ -13,6 +13,47 @@ pub enum FileLetter {
     H,
 }
 
+impl FileLetter {
+    pub fn vec_all() -> Vec<FileLetter> {
+        vec![
+            FileLetter::A,
+            FileLetter::B,
+            FileLetter::C,
+            FileLetter::D,
+            FileLetter::E,
+            FileLetter::F,
+            FileLetter::G,
+            FileLetter::H,
+        ]
+    }
+
+    pub fn inc(&self) -> Self {
+        match self {
+            FileLetter::A => FileLetter::B,
+            FileLetter::B => FileLetter::C,
+            FileLetter::C => FileLetter::D,
+            FileLetter::D => FileLetter::E,
+            FileLetter::E => FileLetter::F,
+            FileLetter::F => FileLetter::G,
+            FileLetter::G => FileLetter::H,
+            FileLetter::H => FileLetter::A,
+        }
+    }
+
+    pub fn dec(&self) -> Self {
+        match self {
+            FileLetter::A => FileLetter::H,
+            FileLetter::B => FileLetter::A,
+            FileLetter::C => FileLetter::B,
+            FileLetter::D => FileLetter::C,
+            FileLetter::E => FileLetter::D,
+            FileLetter::F => FileLetter::E,
+            FileLetter::G => FileLetter::F,
+            FileLetter::H => FileLetter::G,
+        }
+    }
+}
+
 impl From<FileLetter> for char {
     fn from(file: FileLetter) -> Self {
         match file {
@@ -39,7 +80,7 @@ impl From<char> for FileLetter {
             'f' => FileLetter::F,
             'g' => FileLetter::G,
             'h' => FileLetter::H,
-            _ => unreachable!(),
+            _ => panic!("FileLetter cannot be created from a character other than a-h"),
         }
     }
 }
@@ -59,71 +100,12 @@ impl From<FileLetter> for u8 {
     }
 }
 
-impl From<u8> for FileLetter {
-    fn from(num: u8) -> Self {
-        match num {
-            0 => FileLetter::A,
-            1 => FileLetter::B,
-            2 => FileLetter::C,
-            3 => FileLetter::D,
-            4 => FileLetter::E,
-            5 => FileLetter::F,
-            6 => FileLetter::G,
-            7 => FileLetter::H,
-            _ => panic!("FileLetter cannot be created from a number greater than 7"),
-        }
-    }
-}
-
-impl Add<u8> for FileLetter {
-    type Output = Self;
-
-    fn add(self, other: u8) -> Self::Output {
-        if other == 0 {
-            return self;
-        }
-
-        match self {
-            FileLetter::A => FileLetter::B,
-            FileLetter::B => FileLetter::C,
-            FileLetter::C => FileLetter::D,
-            FileLetter::D => FileLetter::E,
-            FileLetter::E => FileLetter::F,
-            FileLetter::F => FileLetter::G,
-            FileLetter::G => FileLetter::H,
-            _ => panic!("FileLetter cannot be incremented past H"),
-        };
-
-        self + (other - 1)
-    }
-}
-
-impl Sub<u8> for FileLetter {
-    type Output = Self;
-
-    fn sub(self, other: u8) -> Self::Output {
-        if other == 0 {
-            return self;
-        }
-
-        match self {
-            FileLetter::H => FileLetter::G,
-            FileLetter::G => FileLetter::F,
-            FileLetter::F => FileLetter::E,
-            FileLetter::E => FileLetter::D,
-            FileLetter::D => FileLetter::C,
-            FileLetter::C => FileLetter::B,
-            FileLetter::B => FileLetter::A,
-            _ => panic!("FileLetter cannot be decremented past A"),
-        };
-
-        self - (other - 1)
-    }
-}
-
 impl PartialEq for FileLetter {
     fn eq(&self, other: &Self) -> bool {
-        self == other
+        let self_num: u8 = Into::into(self.clone());
+        let other_num: u8 = Into::into(other.clone());
+
+        self_num == other_num
     }
 }
 
@@ -151,14 +133,38 @@ impl Clone for FileLetter {
     }
 }
 
+impl Add<u8> for FileLetter {
+    type Output = Self;
+
+    fn add(self, rhs: u8) -> Self::Output {
+        let mut new_file = self;
+        for _ in 0..rhs {
+            new_file = new_file.inc();
+        }
+        new_file
+    }
+}
+
 impl AddAssign<u8> for FileLetter {
-    fn add_assign(&mut self, other: u8) {
-        *self = self.clone() + other;
+    fn add_assign(&mut self, rhs: u8) {
+        *self = self.clone() + rhs;
+    }
+}
+
+impl Sub<u8> for FileLetter {
+    type Output = Self;
+
+    fn sub(self, rhs: u8) -> Self::Output {
+        let mut new_file = self;
+        for _ in 0..rhs {
+            new_file = new_file.dec();
+        }
+        new_file
     }
 }
 
 impl SubAssign<u8> for FileLetter {
-    fn sub_assign(&mut self, other: u8) {
-        *self = self.clone() - other;
+    fn sub_assign(&mut self, rhs: u8) {
+        *self = self.clone() - rhs;
     }
 }

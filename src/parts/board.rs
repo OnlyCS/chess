@@ -11,13 +11,8 @@ pub struct Board {
 impl Board {
     pub fn new() -> Board {
         let mut board = Self { files: Vec::new() };
-        for letter in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].iter() {
-            let file = match File::new(*letter) {
-                Ok(f) => f,
-                Err(_) => unreachable!(),
-            };
-
-            board.files.push(file);
+        for letter in FileLetter::vec_all() {
+            board.files.push(File::new(letter));
         }
 
         board
@@ -86,6 +81,10 @@ impl Board {
         }
 
         moves
+    }
+
+    pub fn get_files(&self) -> &Vec<File> {
+        &self.files
     }
 }
 

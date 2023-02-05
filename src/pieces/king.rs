@@ -2,6 +2,7 @@ use crate::{
     parts::{board::Board, position::Position},
     types::{
         color::Color,
+        file_letter::FileLetter,
         piece_type::PieceType,
         r#move::{Move, MoveModifier},
     },
@@ -22,8 +23,8 @@ impl King {
                 can_en_passant: false,
                 can_double_move: false,
                 can_castle: match color {
-                    Color::White => position == Position::new(5, 1),
-                    Color::Black => position == Position::new(5, 8),
+                    Color::White => position == Position::new(FileLetter::E, 1),
+                    Color::Black => position == Position::new(FileLetter::E, 8),
                 },
             },
             color,

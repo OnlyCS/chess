@@ -1,8 +1,16 @@
-use intuitive::{components::*, event::handler::Propagate, state::use_state, *};
+use crossterm::event::MouseEvent;
+use intuitive::{event::handler::Propagate, state::use_state, *};
 
-use crate::{game::chess::Chess, parts::position::Position};
+use crate::{
+    game::chess::Chess,
+    parts::{position::Position, square::Square},
+};
 
-use super::selection::{Selection, SelectionMode};
+use super::{
+    board::Board,
+    data::{SelectData, UIFileData},
+    selection::{Selection, SelectionMode},
+};
 
 #[component(Root)]
 pub fn render() {
@@ -16,6 +24,28 @@ pub fn render() {
         selected: None,
         avaliable: vec![],
     });
+
+    let board_data = game
+        .get_board()
+        .get_files()
+        .iter()
+        .map(|f| f.clone().into_iter().collect::<Vec<Square>>())
+        .map(|p| {
+            p.iter()
+                .map(|s| SelectData {
+                    selection: selection.get().has(s.get_position()),
+                    piece: s
+                        .get_piece()
+                        .map(|p| p.to_string())
+                        .unwrap_or(" ".to_string()),
+                })
+                .rev()
+                .collect::<Vec<SelectData>>()
+        })
+        .collect::<Vec<Vec<SelectData>>>()
+        .iter()
+        .map(|f| UIFileData::create_from(f.to_vec()))
+        .collect::<Vec<UIFileData>>();
 
     // define key handler
     let key_hander = {
@@ -51,19 +81,6 @@ pub fn render() {
                             ..
                         } => {
                             select_mode.set(SelectionMode::SelectMove);
-                            selection.mutate(|s| {
-                                s.selected = Some(s.hover.copy());
-                                s.avaliable = game
-                                    .get_board()
-                                    .square(&s.hover)
-                                    .expect("No piece at selected position")
-                                    .get_piece()
-                                    .expect("No piece at selected position")
-                                    .get_moves(game.get_board())
-                                    .iter()
-                                    .map(|p| p.clone().to)
-                                    .collect();
-                            });
                         }
 
                         _ => (),
@@ -105,7 +122,9 @@ pub fn render() {
         }
     };
 
+    let mouse_handler = { move |_: MouseEvent| Propagate::Stop };
+
     render! {
-        Text(text: "Hello, world!")
+        Board(on_key: key_hander, on_mouse: mouse_handler, board_data: board_data)
     }
 }

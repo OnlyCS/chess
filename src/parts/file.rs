@@ -1,6 +1,7 @@
-use std::error::Error;
-
-use crate::types::file_letter::FileLetter;
+use crate::{
+    pieces::{bishop::Bishop, king::King, knight::Knight, pawn::Pawn, queen::Queen, rook::Rook},
+    types::{color::Color, file_letter::FileLetter},
+};
 
 use super::{position::Position, square::Square};
 
@@ -10,8 +11,7 @@ pub struct File {
 }
 
 impl File {
-    pub fn new<T: Into<FileLetter>>(letter: T) -> Result<Self, Box<dyn Error>> {
-        let letter: FileLetter = letter.into();
+    pub fn new(letter: FileLetter) -> Self {
         let mut squares = Vec::new();
 
         for rank in 1..9 {
@@ -19,7 +19,91 @@ impl File {
             squares.push(Square::new(position));
         }
 
-        Ok(Self { letter, squares })
+        match letter {
+            FileLetter::A | FileLetter::H => {
+                squares[0].set_piece(Box::new(Rook::new(
+                    Color::White,
+                    Position::new(letter.clone(), 1),
+                )));
+
+                squares[7].set_piece(Box::new(Rook::new(
+                    Color::Black,
+                    Position::new(letter.clone(), 8),
+                )));
+                squares[6].set_piece(Box::new(Rook::new(
+                    Color::Black,
+                    Position::new(letter.clone(), 7),
+                )));
+            }
+            FileLetter::B | FileLetter::G => {
+                squares[0].set_piece(Box::new(Knight::new(
+                    Color::White,
+                    Position::new(letter.clone(), 1),
+                )));
+
+                squares[7].set_piece(Box::new(Knight::new(
+                    Color::Black,
+                    Position::new(letter.clone(), 8),
+                )));
+                squares[6].set_piece(Box::new(Pawn::new(
+                    Color::Black,
+                    Position::new(letter.clone(), 7),
+                )));
+            }
+            FileLetter::C | FileLetter::F => {
+                squares[0].set_piece(Box::new(Bishop::new(
+                    Color::White,
+                    Position::new(letter.clone(), 1),
+                )));
+
+                squares[7].set_piece(Box::new(Bishop::new(
+                    Color::Black,
+                    Position::new(letter.clone(), 8),
+                )));
+                squares[6].set_piece(Box::new(Pawn::new(
+                    Color::Black,
+                    Position::new(letter.clone(), 7),
+                )));
+            }
+            FileLetter::D => {
+                squares[0].set_piece(Box::new(Queen::new(
+                    Color::White,
+                    Position::new(letter.clone(), 1),
+                )));
+
+                squares[7].set_piece(Box::new(Queen::new(
+                    Color::Black,
+                    Position::new(letter.clone(), 8),
+                )));
+                squares[6].set_piece(Box::new(Pawn::new(
+                    Color::Black,
+                    Position::new(letter.clone(), 7),
+                )));
+            }
+            FileLetter::E => {
+                squares[0].set_piece(Box::new(King::new(
+                    Color::White,
+                    Position::new(letter.clone(), 1),
+                )));
+
+                squares[7].set_piece(Box::new(King::new(
+                    Color::Black,
+                    Position::new(letter.clone(), 8),
+                )));
+            }
+        }
+
+        squares[1].set_piece(Box::new(Pawn::new(
+            Color::White,
+            Position::new(letter.clone(), 2),
+        )));
+
+        squares[6].set_piece(Box::new(Pawn::new(
+            Color::Black,
+            Position::new(letter.clone(), 7),
+        )));
+
+        Self { letter, squares }
     }
 
     pub fn rank(&self, rank: u8) -> Option<&Square> {
