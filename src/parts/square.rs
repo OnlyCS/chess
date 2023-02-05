@@ -4,7 +4,7 @@ use super::position::Position;
 
 pub struct Square {
     position: Position,
-    piece: Option<Box<dyn Piece>>,
+    piece: Option<Box<dyn Piece + Sync + Send>>,
 }
 
 impl Square {
@@ -15,15 +15,15 @@ impl Square {
         }
     }
 
-    pub fn set_piece(&mut self, piece: Box<dyn Piece>) {
+    pub fn set_piece(&mut self, piece: Box<dyn Piece + Sync + Send>) {
         self.piece = Some(piece);
     }
 
-    pub fn get_piece(&self) -> Option<&Box<dyn Piece>> {
+    pub fn get_piece(&self) -> Option<&Box<dyn Piece + Sync + Send>> {
         self.piece.as_ref()
     }
 
-    pub fn get_piece_mut(&mut self) -> Option<&mut Box<dyn Piece>> {
+    pub fn get_piece_mut(&mut self) -> Option<&mut Box<dyn Piece + Sync + Send>> {
         self.piece.as_mut()
     }
 

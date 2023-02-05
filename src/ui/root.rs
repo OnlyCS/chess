@@ -1,5 +1,7 @@
+#![allow(clippy::new_ret_no_self)]
+
 use crossterm::event::MouseEvent;
-use intuitive::{event::handler::Propagate, state::use_state, *};
+use intuitive::{components::Component, event::handler::Propagate, state::use_state, *};
 
 use crate::{
     game::chess::Chess,
@@ -12,119 +14,123 @@ use super::{
     selection::{Selection, SelectionMode},
 };
 
-#[component(Root)]
-pub fn render() {
-    // define a game
-    let game = Chess::default();
+#[derive(Default)]
+pub struct Root {
+    game: Chess,
+}
 
-    // create states for storing selections
-    let select_mode = use_state(|| SelectionMode::SelectPiece);
-    let selection = use_state(|| Selection {
-        hover: Position::default(),
-        selected: None,
-        avaliable: vec![],
-    });
+impl Root {
+    pub fn new() -> components::Any {
+        Self::default().into()
+    }
+}
 
-    let board_data = game
-        .get_board()
-        .get_files()
-        .iter()
-        .map(|f| f.clone().into_iter().collect::<Vec<Square>>())
-        .map(|p| {
-            p.iter()
-                .map(|s| SelectData {
-                    selection: selection.get().has(s.get_position()),
-                    piece: s
-                        .get_piece()
-                        .map(|p| p.to_string())
-                        .unwrap_or(" ".to_string()),
-                })
-                .rev()
-                .collect::<Vec<SelectData>>()
-        })
-        .collect::<Vec<Vec<SelectData>>>()
-        .iter()
-        .map(|f| UIFileData::create_from(f.to_vec()))
-        .collect::<Vec<UIFileData>>();
+impl Component for Root {
+    fn render(&self) -> element::Any {
+        let select_mode = use_state(|| SelectionMode::SelectPiece);
+        let selection = use_state(|| Selection {
+            hover: Position::default(),
+            selected: None,
+            avaliable: vec![],
+        });
 
-    // define key handler
-    let key_hander = {
-        use super::selection::SelectionMode;
+        let board_data = self
+            .game
+            .get_board()
+            .get_files()
+            .iter()
+            .map(|f| f.clone().into_iter().collect::<Vec<Square>>())
+            .map(|p| {
+                p.iter()
+                    .map(|s| SelectData {
+                        selection: selection.get().has(s.get_position()),
+                        piece: s
+                            .get_piece()
+                            .map(|p| p.to_string())
+                            .unwrap_or(" ".to_string()),
+                    })
+                    .rev()
+                    .collect::<Vec<SelectData>>()
+            })
+            .collect::<Vec<Vec<SelectData>>>()
+            .iter()
+            .map(|f| UIFileData::create_from(f.to_vec()))
+            .collect::<Vec<UIFileData>>();
 
-        move |event| {
-            match select_mode.get() {
-                SelectionMode::SelectPiece => {
-                    use intuitive::event::{
-                        self,
-                        KeyCode::{self, *},
-                        KeyEvent,
-                    };
+        let key_hander = {
+            move |event| {
+                match select_mode.get() {
+                    SelectionMode::SelectPiece => {
+                        use intuitive::event::{
+                            KeyCode::{self, *},
+                            KeyEvent,
+                        };
 
-                    match event {
-                        KeyEvent {
-                            code: Char('q'), ..
-                        } => event::quit(),
-                        KeyEvent {
-                            code: Char('w'), ..
-                        } => selection.mutate(|s| s.hover.up()),
-                        KeyEvent {
-                            code: Char('a'), ..
-                        } => selection.mutate(|s| s.hover.left()),
-                        KeyEvent {
-                            code: Char('s'), ..
-                        } => selection.mutate(|s| s.hover.down()),
-                        KeyEvent {
-                            code: Char('d'), ..
-                        } => selection.mutate(|s| s.hover.right()),
-                        KeyEvent {
-                            code: KeyCode::Enter,
-                            ..
-                        } => {
-                            select_mode.set(SelectionMode::SelectMove);
+                        match event {
+                            KeyEvent {
+                                code: Char('q'), ..
+                            } => event::quit(),
+                            KeyEvent {
+                                code: Char('w'), ..
+                            } => selection.mutate(|s| s.hover.up()),
+                            KeyEvent {
+                                code: Char('a'), ..
+                            } => selection.mutate(|s| s.hover.left()),
+                            KeyEvent {
+                                code: Char('s'), ..
+                            } => selection.mutate(|s| s.hover.down()),
+                            KeyEvent {
+                                code: Char('d'), ..
+                            } => selection.mutate(|s| s.hover.right()),
+                            KeyEvent {
+                                code: KeyCode::Enter,
+                                ..
+                            } => {
+                                select_mode.set(SelectionMode::SelectMove);
+                            }
+
+                            _ => (),
                         }
-
-                        _ => (),
                     }
-                }
+                    SelectionMode::SelectMove => {
+                        use intuitive::event::{KeyCode::*, KeyEvent};
 
-                SelectionMode::SelectMove => {
-                    use intuitive::event::{self, KeyCode::*, KeyEvent};
+                        match event {
+                            KeyEvent {
+                                code: Char('q'), ..
+                            } => event::quit(),
+                            KeyEvent {
+                                code: Char('w'), ..
+                            } => selection.mutate(|s| s.hover.up()),
+                            KeyEvent {
+                                code: Char('a'), ..
+                            } => selection.mutate(|s| s.hover.left()),
+                            KeyEvent {
+                                code: Char('s'), ..
+                            } => selection.mutate(|s| s.hover.down()),
+                            KeyEvent {
+                                code: Char('d'), ..
+                            } => selection.mutate(|s| s.hover.right()),
+                            KeyEvent { code: Esc, .. } => {
+                                select_mode.set(SelectionMode::SelectPiece);
 
-                    match event {
-                        KeyEvent {
-                            code: Char('q'), ..
-                        } => event::quit(),
-                        KeyEvent {
-                            code: Char('w'), ..
-                        } => selection.mutate(|s| s.hover.up()),
-                        KeyEvent {
-                            code: Char('a'), ..
-                        } => selection.mutate(|s| s.hover.left()),
-                        KeyEvent {
-                            code: Char('s'), ..
-                        } => selection.mutate(|s| s.hover.down()),
-                        KeyEvent {
-                            code: Char('d'), ..
-                        } => selection.mutate(|s| s.hover.right()),
-                        KeyEvent { code: Esc, .. } => {
-                            select_mode.set(SelectionMode::SelectPiece);
-
-                            selection.mutate(|s| {
-                                s.selected = None;
-                                s.avaliable = vec![];
-                            });
+                                selection.mutate(|s| {
+                                    s.selected = None;
+                                    s.avaliable = vec![];
+                                });
+                            }
+                            _ => (),
                         }
-                        _ => (),
                     }
-                }
-            };
-            Propagate::Next
+                };
+                Propagate::Next
+            }
+        };
+
+        let mouse_handler = { move |_: MouseEvent| Propagate::Stop };
+
+        render! {
+            Board(on_key: key_hander, on_mouse: mouse_handler, board_data: board_data)
         }
-    };
-
-    let mouse_handler = { move |_: MouseEvent| Propagate::Stop };
-
-    render! {
-        Board(on_key: key_hander, on_mouse: mouse_handler, board_data: board_data)
     }
 }

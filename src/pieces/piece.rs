@@ -49,7 +49,7 @@ pub trait Piece {
     fn get_data(&self) -> Option<&PieceData> {
         None
     }
-    fn copy(&self) -> Box<dyn Piece>;
+    fn copy(&self) -> Box<dyn Piece + Sync + Send>;
     fn set_position(&mut self, position: Position);
 }
 
@@ -59,7 +59,7 @@ impl Display for dyn Piece {
     }
 }
 
-impl Clone for Box<dyn Piece> {
+impl Clone for Box<dyn Piece + Sync + Send> {
     fn clone(&self) -> Self {
         self.copy()
     }
