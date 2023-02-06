@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use crate::types::file_letter::FileLetter;
 
 pub struct Position {
@@ -21,28 +23,108 @@ impl Position {
         self.file < FileLetter::A || self.file > FileLetter::H || self.rank < 1 || self.rank > 8
     }
 
-    pub fn up(&mut self) {
-        if self.rank < 8 {
-            self.rank += 1;
+    pub fn up(&self, ct: i32) -> Result<Self, Box<dyn Error>> {
+        let rank = self.rank as i32 + ct;
+
+        if rank > 8 {
+            return Err("Cannot go up from rank 8".into());
         }
+
+        Ok(Self::new(self.file.clone(), rank as u8))
     }
 
-    pub fn down(&mut self) {
-        if self.rank > 1 {
-            self.rank -= 1;
+    pub fn up_loop(&self, ct: i32) -> Self {
+        let mut rank = self.rank as i32 + ct;
+
+        while rank > 8 {
+            rank -= 8;
         }
+
+        Self::new(self.file.clone(), rank as u8)
     }
 
-    pub fn left(&mut self) {
-        if self.file > FileLetter::A {
-            self.file -= 1;
+    pub fn down(&self, ct: i32) -> Result<Self, Box<dyn Error>> {
+        let rank = self.rank as i32 - ct;
+
+        if rank < 1 {
+            return Err("Cannot go down from rank 1".into());
         }
+
+        Ok(Self::new(self.file.clone(), rank as u8))
     }
 
-    pub fn right(&mut self) {
-        if self.file < FileLetter::H {
-            self.file += 1;
+    pub fn down_loop(&self, ct: i32) -> Self {
+        let mut rank = self.rank as i32 - ct;
+
+        while rank < 1 {
+            rank += 8;
         }
+
+        Self::new(self.file.clone(), rank as u8)
+    }
+
+    fn left_recursive(pos: Self, ct: i32) -> Result<Self, Box<dyn Error>> {
+        if ct == 0 {
+            return Ok(pos);
+        }
+
+        let file = pos.file.prev()?;
+        let pos = Self::new(file, pos.rank);
+        Self::left_recursive(pos, ct - 1)
+    }
+
+    fn left_recursive_loop(pos: Self, ct: i32) -> Self {
+        if ct == 0 {
+            return pos;
+        }
+
+        let file = pos.file.prev_loop();
+        let pos = Self::new(file, pos.rank);
+        Self::left_recursive_loop(pos, ct - 1)
+    }
+
+    fn right_recursive(pos: Self, ct: i32) -> Result<Self, Box<dyn Error>> {
+        if ct == 0 {
+            return Ok(pos);
+        }
+
+        let file = pos.file.next()?;
+        let pos = Self::new(file, pos.rank);
+        Self::right_recursive(pos, ct - 1)
+    }
+
+    fn right_recursive_loop(pos: Self, ct: i32) -> Self {
+        if ct == 0 {
+            return pos;
+        }
+
+        let file = pos.file.next_loop();
+        let pos = Self::new(file, pos.rank);
+        Self::right_recursive_loop(pos, ct - 1)
+    }
+
+    pub fn right(&self, ct: i32) -> Result<Self, Box<dyn Error>> {
+        if ct == 0 {
+            return Ok(self.clone());
+        }
+
+        Self::right_recursive(self.clone(), ct)
+    }
+
+    pub fn right_loop(&self, ct: i32) -> Self {
+        Self::right_recursive_loop(self.clone(), ct)
+    }
+
+    pub fn left(&self, ct: i32) -> Result<Self, Box<dyn Error>> {
+        if ct == 0 {
+            return Ok(self.clone());
+        }
+
+        Self::left_recursive(self.clone(), ct)
+    }
+
+    pub fn left_loop(&self, ct: i32) -> Self {
+        Self::left_recursive_loop(self.clone(), ct)
     }
 }
 

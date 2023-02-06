@@ -34,66 +34,49 @@ impl Piece for Knight {
     }
 
     fn get_moves(&self, board: &Board) -> Vec<Move> {
-        let mut moves = vec![
-            Move::new(
-                self.position.clone(),
-                Position::new(self.position.clone().file + 1, self.position.rank + 2),
-                None,
-            ),
-            Move::new(
-                self.position.clone(),
-                Position::new(self.position.clone().file + 1, self.position.rank - 2),
-                None,
-            ),
-            Move::new(
-                self.position.clone(),
-                Position::new(self.position.clone().file - 1, self.position.rank + 2),
-                None,
-            ),
-            Move::new(
-                self.position.clone(),
-                Position::new(self.position.clone().file - 1, self.position.rank - 2),
-                None,
-            ),
-            Move::new(
-                self.position.clone(),
-                Position::new(self.position.clone().file + 2, self.position.rank + 1),
-                None,
-            ),
-            Move::new(
-                self.position.clone(),
-                Position::new(self.position.clone().file + 2, self.position.rank - 1),
-                None,
-            ),
-            Move::new(
-                self.position.clone(),
-                Position::new(self.position.clone().file - 2, self.position.rank + 1),
-                None,
-            ),
-            Move::new(
-                self.position.clone(),
-                Position::new(self.position.clone().file - 2, self.position.rank - 1),
-                None,
-            ),
+        // let move_nums: Vec<[i32; 2]> = vec![
+        //     [1, 2],
+        //     [1, -2],
+        //     [-1, 2],
+        //     [-1, -2],
+        //     [2, 1],
+        //     [2, -1],
+        //     [-2, 1],
+        //     [-2, -1],
+        // ];
+        let move_nums = vec![
+            self.position.up(1).map(|x| x.right(2)),
+            self.position.up(1).map(|x| x.left(2)),
+            self.position.down(1).map(|x| x.right(2)),
+            self.position.down(1).map(|x| x.left(2)),
+            self.position.up(2).map(|x| x.right(1)),
+            self.position.up(2).map(|x| x.left(1)),
+            self.position.down(2).map(|x| x.right(1)),
+            self.position.down(2).map(|x| x.left(1)),
         ];
 
-        let mut remove = Vec::new();
-        for (i, m) in moves.iter_mut().enumerate() {
-            if let Some(square) = board.square(&m.to) {
-                if let Some(piece) = square.get_piece() {
-                    if piece.get_color() == &self.color {
-                        remove.push(i);
-                    } else {
-                        m.modifiers = Some(vec![MoveModifier::Capture]);
-                    }
-                }
-            } else {
-                remove.push(i);
-            }
-        }
+        let mut moves: Vec<Move> = Vec::new();
 
-        for i in remove.iter().rev() {
-            moves.remove(*i);
+        for position in move_nums.into_iter().flatten().flatten() {
+            let mut capture = false;
+            let mut keep = true;
+
+            if let Some(Some(piece)) = board.square(&position).map(|x| x.get_piece()) {
+                if piece.get_color() != &self.color {
+                    capture = true;
+                } else {
+                    keep = false;
+                }
+            }
+
+            if keep {
+                let mut modifiers = Vec::new();
+                if capture {
+                    modifiers.push(MoveModifier::Capture);
+                }
+
+                moves.push(Move::new(self.position.clone(), position, modifiers));
+            }
         }
 
         moves

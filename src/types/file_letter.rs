@@ -1,6 +1,6 @@
 #![allow(clippy::panic)]
 
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::error::Error;
 
 pub enum FileLetter {
     A,
@@ -27,7 +27,20 @@ impl FileLetter {
         ]
     }
 
-    pub fn inc(&self) -> Self {
+    pub fn next(&self) -> Result<Self, Box<dyn Error>> {
+        match self {
+            FileLetter::A => Ok(FileLetter::B),
+            FileLetter::B => Ok(FileLetter::C),
+            FileLetter::C => Ok(FileLetter::D),
+            FileLetter::D => Ok(FileLetter::E),
+            FileLetter::E => Ok(FileLetter::F),
+            FileLetter::F => Ok(FileLetter::G),
+            FileLetter::G => Ok(FileLetter::H),
+            FileLetter::H => Err("Cannot go forward from H".into()),
+        }
+    }
+
+    pub fn next_loop(&self) -> Self {
         match self {
             FileLetter::A => FileLetter::B,
             FileLetter::B => FileLetter::C,
@@ -40,7 +53,20 @@ impl FileLetter {
         }
     }
 
-    pub fn dec(&self) -> Self {
+    pub fn prev(&self) -> Result<Self, Box<dyn Error>> {
+        match self {
+            FileLetter::A => Err("Cannot go back from A".into()),
+            FileLetter::B => Ok(FileLetter::A),
+            FileLetter::C => Ok(FileLetter::B),
+            FileLetter::D => Ok(FileLetter::C),
+            FileLetter::E => Ok(FileLetter::D),
+            FileLetter::F => Ok(FileLetter::E),
+            FileLetter::G => Ok(FileLetter::F),
+            FileLetter::H => Ok(FileLetter::G),
+        }
+    }
+
+    pub fn prev_loop(&self) -> Self {
         match self {
             FileLetter::A => FileLetter::H,
             FileLetter::B => FileLetter::A,
@@ -100,6 +126,22 @@ impl From<FileLetter> for u8 {
     }
 }
 
+impl From<u8> for FileLetter {
+    fn from(val: u8) -> Self {
+        match val {
+            0 => FileLetter::A,
+            1 => FileLetter::B,
+            2 => FileLetter::C,
+            3 => FileLetter::D,
+            4 => FileLetter::E,
+            5 => FileLetter::F,
+            6 => FileLetter::G,
+            7 => FileLetter::H,
+            _ => panic!("FileLetter cannot be created from a number other than 0-7"),
+        }
+    }
+}
+
 impl PartialEq for FileLetter {
     fn eq(&self, other: &Self) -> bool {
         let self_num: u8 = Into::into(self.clone());
@@ -130,41 +172,5 @@ impl Clone for FileLetter {
             FileLetter::G => FileLetter::G,
             FileLetter::H => FileLetter::H,
         }
-    }
-}
-
-impl Add<u8> for FileLetter {
-    type Output = Self;
-
-    fn add(self, rhs: u8) -> Self::Output {
-        let mut new_file = self;
-        for _ in 0..rhs {
-            new_file = new_file.inc();
-        }
-        new_file
-    }
-}
-
-impl AddAssign<u8> for FileLetter {
-    fn add_assign(&mut self, rhs: u8) {
-        *self = self.clone() + rhs;
-    }
-}
-
-impl Sub<u8> for FileLetter {
-    type Output = Self;
-
-    fn sub(self, rhs: u8) -> Self::Output {
-        let mut new_file = self;
-        for _ in 0..rhs {
-            new_file = new_file.dec();
-        }
-        new_file
-    }
-}
-
-impl SubAssign<u8> for FileLetter {
-    fn sub_assign(&mut self, rhs: u8) {
-        *self = self.clone() - rhs;
     }
 }

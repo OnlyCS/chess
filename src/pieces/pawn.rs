@@ -50,71 +50,64 @@ impl Piece for Pawn {
 
         // check a double move
         if self.data.can_double_move {
-            if let Some(square) = board.square(&Position::new(
-                self.position.clone().file,
-                self.position.rank + 2,
-            )) {
+            if let Ok(Some(square)) = self.position.up(2).map(|i| board.square(&i)) {
                 if square.is_empty() {
                     moves.push(Move::new(
                         self.position.clone(),
                         Position::new(self.position.clone().file, self.position.rank + 2),
-                        None,
+                        vec![],
                     ));
                 }
             }
         }
 
         // check a single move
-        if let Some(square) = board.square(&Position::new(
-            self.position.clone().file,
-            self.position.rank + 1,
-        )) {
+        if let Ok(Some(square)) = self.position.up(1).map(|i| board.square(&i)) {
             if square.is_empty() {
                 moves.push(Move::new(
                     self.position.clone(),
-                    Position::new(self.position.clone().file, self.position.rank + 1),
-                    None,
+                    square.get_position().clone(),
+                    vec![],
                 ));
             }
         }
 
         // check capture to right
-        if let Some(square) = board.square(&Position::new(
-            self.position.clone().file + 1,
-            self.position.rank + 1,
-        )) {
+        if let Ok(Ok(Some(square))) = self
+            .position
+            .up(1)
+            .map(|i| i.right(1).map(|j| board.square(&j)))
+        {
             if let Some(piece) = square.get_piece() {
                 if piece.get_color() != self.get_color() {
                     moves.push(Move::new(
                         self.position.clone(),
-                        Position::new(self.position.clone().file + 1, self.position.rank + 1),
-                        None,
+                        square.get_position().clone(),
+                        vec![],
                     ));
                 }
             }
         }
 
         // check capture to left
-        if let Some(square) = board.square(&Position::new(
-            self.position.clone().file - 1,
-            self.position.rank + 1,
-        )) {
+        if let Ok(Ok(Some(square))) = self
+            .position
+            .up(1)
+            .map(|i| i.left(1).map(|j| board.square(&j)))
+        {
             if let Some(piece) = square.get_piece() {
                 if piece.get_color() != self.get_color() {
                     moves.push(Move::new(
                         self.position.clone(),
-                        Position::new(self.position.clone().file - 1, self.position.rank + 1),
-                        None,
+                        square.get_position().clone(),
+                        vec![],
                     ));
                 }
             }
         }
 
         // check en-passant exists to the left
-        if let Some(ep_square) = board.square(&Position::new(
-            self.position.clone().file + 1,
-            self.position.rank,
-        )) {
+        if let Ok(Some(ep_square)) = self.position.left(1).map(|i| board.square(&i)) {
             if let Some(ep_piece) = ep_square.get_piece() {
                 if ep_piece.get_color() != self.get_color()
                     && ep_piece.get_type() == PieceType::Pawn
@@ -122,27 +115,35 @@ impl Piece for Pawn {
                 {
                     moves.push(Move::new(
                         self.position.clone(),
-                        Position::new(self.position.clone().file + 1, self.position.rank + 1),
-                        None,
+                        ep_square.get_position().clone(),
+                        vec![MoveModifier::EnPassant],
+                    ));
+                }
+            }
+        }
+
+        // check en-passant exists to the right
+        if let Ok(Some(ep_square)) = self.position.right(1).map(|i| board.square(&i)) {
+            if let Some(ep_piece) = ep_square.get_piece() {
+                if ep_piece.get_color() != self.get_color()
+                    && ep_piece.get_type() == PieceType::Pawn
+                    && ep_piece.get_data().expect("unreachable").can_en_passant
+                {
+                    moves.push(Move::new(
+                        self.position.clone(),
+                        ep_square.get_position().clone(),
+                        vec![MoveModifier::EnPassant],
                     ));
                 }
             }
         }
 
         for m in moves.iter_mut() {
-            let mut modifiers = Vec::new();
-
-            if let Some(mods) = m.clone().modifiers {
-                modifiers.extend(mods);
-            }
-
             if m.to.rank == 8 && self.color == Color::White
                 || m.to.rank == 1 && self.color == Color::Black
             {
-                modifiers.push(MoveModifier::Promotion);
+                m.modifiers.push(MoveModifier::Promotion);
             }
-
-            m.modifiers = Some(modifiers);
         }
 
         moves

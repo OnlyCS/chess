@@ -40,8 +40,6 @@ pub fn render() -> element::Any {
                 .rev()
                 .collect::<Vec<SelectData>>()
         })
-        .collect::<Vec<Vec<SelectData>>>()
-        .iter()
         .map(|f| UIFileData::create_from(f.to_vec()))
         .collect::<Vec<UIFileData>>();
 
@@ -60,20 +58,44 @@ pub fn render() -> element::Any {
                         } => event::quit(),
                         KeyEvent {
                             code: Char('w'), ..
-                        } => selection.mutate(|s| s.hover.up()),
+                        } => selection.mutate(|s| s.hover = s.hover.up_loop(1)),
                         KeyEvent {
                             code: Char('a'), ..
-                        } => selection.mutate(|s| s.hover.left()),
+                        } => selection.mutate(|s| s.hover = s.hover.left_loop(1)),
                         KeyEvent {
                             code: Char('s'), ..
-                        } => selection.mutate(|s| s.hover.down()),
+                        } => selection.mutate(|s| s.hover = s.hover.down_loop(1)),
                         KeyEvent {
                             code: Char('d'), ..
-                        } => selection.mutate(|s| s.hover.right()),
+                        } => selection.mutate(|s| s.hover = s.hover.right_loop(1)),
                         KeyEvent {
                             code: KeyCode::Enter,
                             ..
                         } => {
+                            let game = chess.get();
+
+                            let selected_piece = match game
+                                .get_board()
+                                .square(&selection.get().hover)
+                                .map(|s| s.get_piece())
+                            {
+                                Some(Some(p)) => p,
+                                _ => todo!("Error message"),
+                            };
+
+                            if selected_piece.get_color() != chess.get().get_turn() {
+                                todo!("Error message");
+                            }
+
+                            selection.mutate(|s| {
+                                s.selected = Some(s.hover.clone());
+                                s.avaliable = selected_piece
+                                    .get_moves(chess.get().get_board())
+                                    .iter()
+                                    .map(|m| m.to.clone())
+                                    .collect();
+                            });
+
                             select_mode.set(SelectionMode::SelectMove);
                         }
 
@@ -89,22 +111,50 @@ pub fn render() -> element::Any {
                         } => event::quit(),
                         KeyEvent {
                             code: Char('w'), ..
-                        } => selection.mutate(|s| s.hover.up()),
+                        } => selection.mutate(|s| s.hover = s.hover.up_loop(1)),
                         KeyEvent {
                             code: Char('a'), ..
-                        } => selection.mutate(|s| s.hover.left()),
+                        } => selection.mutate(|s| s.hover = s.hover.left_loop(1)),
                         KeyEvent {
                             code: Char('s'), ..
-                        } => selection.mutate(|s| s.hover.down()),
+                        } => selection.mutate(|s| s.hover = s.hover.down_loop(1)),
                         KeyEvent {
                             code: Char('d'), ..
-                        } => selection.mutate(|s| s.hover.right()),
+                        } => selection.mutate(|s| s.hover = s.hover.right_loop(1)),
                         KeyEvent { code: Esc, .. } => {
                             select_mode.set(SelectionMode::SelectPiece);
 
                             selection.mutate(|s| {
                                 s.selected = None;
                                 s.avaliable = vec![];
+                            });
+                        }
+                        KeyEvent { code: Enter, .. } => {
+                            chess.mutate(|game| {
+                                let move_to = selection.get().hover;
+                                let move_from = selection.get().selected.expect("Error message");
+                                let available_movetos = selection.get().avaliable;
+                                let mut moves = game.get_moves();
+
+                                if !available_movetos.contains(&move_to) {
+                                    todo!("Error message");
+                                }
+
+                                moves.retain(|x| x.from == move_from && x.to == move_to);
+                                let mv = &moves[0];
+
+                                let move_result = game.make_move(mv.clone());
+
+                                if move_result.is_err() {
+                                    todo!("Error message Err(e).tostring()?");
+                                }
+
+                                select_mode.set(SelectionMode::SelectPiece);
+
+                                selection.mutate(|s| {
+                                    s.selected = None;
+                                    s.avaliable = vec![];
+                                });
                             });
                         }
                         _ => (),

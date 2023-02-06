@@ -47,10 +47,11 @@ impl Piece for Rook {
         let mut moves = Vec::new();
 
         //top
-        for i in 1..8 {
-            let mut position = self.position.clone();
-
-            position.rank += i;
+        for i in 1..=8 {
+            let position = match self.position.up(i) {
+                Ok(p) => p,
+                Err(_) => break,
+            };
 
             if let Some(square) = board.square(&position) {
                 if let Some(piece) = square.get_piece() {
@@ -58,13 +59,13 @@ impl Piece for Rook {
                         moves.push(Move::new(
                             self.position.clone(),
                             position,
-                            Some(vec![MoveModifier::Capture]),
+                            vec![MoveModifier::Capture],
                         ));
                     }
 
                     break;
                 } else {
-                    moves.push(Move::new(self.position.clone(), position, None));
+                    moves.push(Move::new(self.position.clone(), position, vec![]));
                 }
             } else {
                 break;
@@ -72,10 +73,11 @@ impl Piece for Rook {
         }
 
         //right
-        for i in 1..8 {
-            let mut position = self.position.clone();
-
-            position.file += i;
+        for i in 1..=8 {
+            let position = match self.position.right(i) {
+                Ok(p) => p,
+                Err(_) => break,
+            };
 
             if let Some(square) = board.square(&position) {
                 if let Some(piece) = square.get_piece() {
@@ -83,13 +85,13 @@ impl Piece for Rook {
                         moves.push(Move::new(
                             self.position.clone(),
                             position,
-                            Some(vec![MoveModifier::Capture]),
+                            vec![MoveModifier::Capture],
                         ));
                     }
 
                     break;
                 } else {
-                    moves.push(Move::new(self.position.clone(), position, None));
+                    moves.push(Move::new(self.position.clone(), position, vec![]));
                 }
             } else {
                 break;
@@ -97,10 +99,11 @@ impl Piece for Rook {
         }
 
         //bottom
-        for i in 1..8 {
-            let mut position = self.position.clone();
-
-            position.rank -= i;
+        for i in 1..=8 {
+            let position = match self.position.down(i) {
+                Ok(p) => p,
+                Err(_) => break,
+            };
 
             if let Some(square) = board.square(&position) {
                 if let Some(piece) = square.get_piece() {
@@ -108,13 +111,13 @@ impl Piece for Rook {
                         moves.push(Move::new(
                             self.position.clone(),
                             position,
-                            Some(vec![MoveModifier::Capture]),
+                            vec![MoveModifier::Capture],
                         ));
                     }
 
                     break;
                 } else {
-                    moves.push(Move::new(self.position.clone(), position, None));
+                    moves.push(Move::new(self.position.clone(), position, vec![]));
                 }
             } else {
                 break;
@@ -122,10 +125,11 @@ impl Piece for Rook {
         }
 
         //left
-        for i in 1..8 {
-            let mut position = self.position.clone();
-
-            position.file -= i;
+        for i in 1..=8 {
+            let position = match self.position.left(i) {
+                Ok(p) => p,
+                Err(_) => break,
+            };
 
             if let Some(square) = board.square(&position) {
                 if let Some(piece) = square.get_piece() {
@@ -133,13 +137,13 @@ impl Piece for Rook {
                         moves.push(Move::new(
                             self.position.clone(),
                             position,
-                            Some(vec![MoveModifier::Capture]),
+                            vec![MoveModifier::Capture],
                         ));
                     }
 
                     break;
                 } else {
-                    moves.push(Move::new(self.position.clone(), position, None));
+                    moves.push(Move::new(self.position.clone(), position, vec![]));
                 }
             } else {
                 break;

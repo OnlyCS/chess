@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use crate::{
     parts::board::Board,
     types::{color::Color, r#move::Move},
@@ -22,6 +24,18 @@ impl Chess {
 
     pub fn get_moves(&self) -> Vec<Move> {
         self.board.get_moves_for(self.turn)
+    }
+
+    pub fn get_turn(&self) -> &Color {
+        &self.turn
+    }
+
+    pub fn make_move(&mut self, m: Move) -> Result<(), Box<dyn Error>> {
+        self.board.make_move(&m)?;
+
+        self.turn = self.turn.get_opposite();
+
+        Ok(())
     }
 }
 

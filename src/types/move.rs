@@ -13,11 +13,11 @@ pub enum MoveModifier {
 pub struct Move {
     pub from: Position,
     pub to: Position,
-    pub modifiers: Option<Vec<MoveModifier>>,
+    pub modifiers: Vec<MoveModifier>,
 }
 
 impl Move {
-    pub fn new(from: Position, to: Position, modifiers: Option<Vec<MoveModifier>>) -> Move {
+    pub fn new(from: Position, to: Position, modifiers: Vec<MoveModifier>) -> Move {
         Move {
             from,
             to,
@@ -44,7 +44,7 @@ impl PartialEq for Move {
 
 impl Default for Move {
     fn default() -> Self {
-        Self::new(Position::default(), Position::default(), None)
+        Self::new(Position::default(), Position::default(), vec![])
     }
 }
 
