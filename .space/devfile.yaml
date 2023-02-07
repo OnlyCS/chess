@@ -1,0 +1,9 @@
+schemaVersion: 2.2.0
+attributes:
+  space:
+    editor:
+      type: Fleet
+components:
+ - name: dev-container
+   container:
+     image: rust:buster
