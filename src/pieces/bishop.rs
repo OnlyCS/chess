@@ -3,7 +3,7 @@ use crate::{
     types::{
         color::Color,
         piece_type::PieceType,
-        r#move::{Move, MoveFilter, MoveModifier},
+        r#move::{Move, MoveModifier},
     },
 };
 
@@ -139,9 +139,6 @@ impl Piece for Bishop {
                 break;
             }
         }
-
-        moves.retain(|mv| !mv.to.is_oob() && !mv.from.is_oob());
-        moves.filter_king_check(board, self.color);
 
         moves
     }

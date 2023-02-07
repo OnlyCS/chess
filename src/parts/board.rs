@@ -1,6 +1,9 @@
 use std::error::Error;
 
-use crate::types::{color::Color, etc::ToResult, file_letter::FileLetter, r#move::Move};
+use crate::{
+    pieces::piece::Piece,
+    types::{color::Color, etc::ToResult, file_letter::FileLetter, r#move::Move},
+};
 
 use super::{file::File, position::Position, square::Square};
 
@@ -72,7 +75,7 @@ impl Board {
     pub fn get_moves_for(&self, color: Color) -> Vec<Move> {
         let mut moves = Vec::new();
 
-        for square in self.clone() {
+        for square in self.get_squares() {
             if let Some(piece) = square.get_piece() {
                 if *piece.get_color() == color {
                     moves.append(&mut piece.get_moves(self));
@@ -86,24 +89,39 @@ impl Board {
     pub fn get_files(&self) -> &Vec<File> {
         &self.files
     }
+
+    pub fn get_squares(&self) -> Vec<&Square> {
+        let files = &self.files;
+        let iter = files.iter();
+        let mut squares = Vec::with_capacity(64);
+
+        for f in iter {
+            for s in f.get_squares() {
+                squares.push(s);
+            }
+        }
+
+        squares
+    }
+
+    pub fn get_squares_mut(&mut self) -> Vec<&mut Square> {
+        self.files
+            .iter_mut()
+            .flat_map(|x| x.get_squares_mut())
+            .collect()
+    }
+
+    pub fn get_pieces(&self) -> Vec<&Box<dyn Piece + Send + Sync>> {
+        self.get_squares()
+            .iter()
+            .filter_map(|x| x.get_piece())
+            .collect()
+    }
 }
 
 impl Default for Board {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl IntoIterator for Board {
-    type Item = Square;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.files
-            .into_iter()
-            .flat_map(|file| file.into_iter())
-            .collect::<Vec<_>>()
-            .into_iter()
     }
 }
 

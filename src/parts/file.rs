@@ -113,14 +113,13 @@ impl File {
     pub fn rank_mut(&mut self, rank: u8) -> Option<&mut Square> {
         self.squares.get_mut(rank as usize - 1)
     }
-}
 
-impl IntoIterator for File {
-    type Item = Square;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+    pub fn get_squares(&self) -> &Vec<Square> {
+        &self.squares
+    }
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.squares.into_iter()
+    pub fn get_squares_mut(&mut self) -> &mut Vec<Square> {
+        &mut self.squares
     }
 }
 

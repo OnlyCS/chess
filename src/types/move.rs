@@ -1,4 +1,4 @@
-use crate::parts::{board::Board, position::Position, square::Square};
+use crate::parts::{board::Board, position::Position};
 
 use super::{color::Color, piece_type::PieceType};
 
@@ -64,8 +64,7 @@ impl MoveFilter for Vec<Move> {
                     .expect("Failed to check for king check");
 
                 let is_king = this_board
-                    .into_iter()
-                    .collect::<Vec<Square>>()
+                    .get_squares()
                     .iter()
                     .any(|sq| {
                         if let Some(piece) = sq.get_piece() {

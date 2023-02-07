@@ -11,7 +11,7 @@ pub mod types;
 pub mod ui;
 
 fn main() {
-    let mut terminal = Terminal::new(Root::new()).expect("Failed to create UI");
+	let mut terminal = Terminal::new(Root::new()).expect("Failed to create UI");
 
     terminal.run().expect("Failed to run UI");
 }

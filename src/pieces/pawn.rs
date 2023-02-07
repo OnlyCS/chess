@@ -12,7 +12,7 @@ use super::piece::{Piece, PieceData};
 pub struct Pawn {
     color: Color,
     position: Position,
-    pub data: PieceData,
+    data: PieceData,
 }
 
 impl Pawn {
@@ -50,11 +50,14 @@ impl Piece for Pawn {
 
         // check a double move
         if self.data.can_double_move {
-            if let Ok(Some(square)) = self.position.up(2).map(|i| board.square(&i)) {
+            if let Ok(Some(square)) = match self.color {
+                Color::White => self.position.up(2).map(|i| board.square(&i)),
+                Color::Black => self.position.down(2).map(|i| board.square(&i)),
+            } {
                 if square.is_empty() {
                     moves.push(Move::new(
                         self.position.clone(),
-                        Position::new(self.position.clone().file, self.position.rank + 2),
+                        square.get_position().clone(),
                         vec![],
                     ));
                 }
@@ -62,7 +65,10 @@ impl Piece for Pawn {
         }
 
         // check a single move
-        if let Ok(Some(square)) = self.position.up(1).map(|i| board.square(&i)) {
+        if let Ok(Some(square)) = match self.color {
+            Color::White => self.position.up(1).map(|i| board.square(&i)),
+            Color::Black => self.position.down(1).map(|i| board.square(&i)),
+        } {
             if square.is_empty() {
                 moves.push(Move::new(
                     self.position.clone(),
@@ -73,11 +79,16 @@ impl Piece for Pawn {
         }
 
         // check capture to right
-        if let Ok(Ok(Some(square))) = self
-            .position
-            .up(1)
-            .map(|i| i.right(1).map(|j| board.square(&j)))
-        {
+        if let Ok(Ok(Some(square))) = match self.color {
+            Color::White => self
+                .position
+                .up(1)
+                .map(|i| i.right(1).map(|j| board.square(&j))),
+            Color::Black => self
+                .position
+                .down(1)
+                .map(|i| i.right(1).map(|j| board.square(&j))),
+        } {
             if let Some(piece) = square.get_piece() {
                 if piece.get_color() != self.get_color() {
                     moves.push(Move::new(
@@ -90,11 +101,16 @@ impl Piece for Pawn {
         }
 
         // check capture to left
-        if let Ok(Ok(Some(square))) = self
-            .position
-            .up(1)
-            .map(|i| i.left(1).map(|j| board.square(&j)))
-        {
+        if let Ok(Ok(Some(square))) = match self.color {
+            Color::White => self
+                .position
+                .up(1)
+                .map(|i| i.left(1).map(|j| board.square(&j))),
+            Color::Black => self
+                .position
+                .down(1)
+                .map(|i| i.left(1).map(|j| board.square(&j))),
+        } {
             if let Some(piece) = square.get_piece() {
                 if piece.get_color() != self.get_color() {
                     moves.push(Move::new(
@@ -158,6 +174,22 @@ impl Piece for Pawn {
     }
 
     fn set_position(&mut self, position: Position) {
+        let oldpos = self.position.clone();
+
+        if position
+            == match self.color {
+                Color::White => self.position.up(2),
+                Color::Black => self.position.down(2),
+            }
+            .unwrap_or(oldpos)
+        {
+            self.data.can_double_move = false;
+        }
+
+        if self.data.can_en_passant {
+            self.data.can_en_passant = false;
+        }
+
         self.position = position;
     }
 }

@@ -5,6 +5,7 @@ use crate::{
     types::{color::Color, r#move::Move},
 };
 
+// contains board and turn handling
 pub struct Chess {
     board: Board,
     turn: Color,

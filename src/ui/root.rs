@@ -1,10 +1,7 @@
 use crossterm::event::MouseEvent;
 use intuitive::{event::handler::Propagate, state::use_state, *};
 
-use crate::{
-    game::chess::Chess,
-    parts::{position::Position, square::Square},
-};
+use crate::{game::chess::Chess, parts::position::Position};
 
 use super::{
     board::Board,
@@ -27,7 +24,7 @@ pub fn render() -> element::Any {
         .get_board()
         .get_files()
         .iter()
-        .map(|f| f.clone().into_iter().collect::<Vec<Square>>())
+        .map(|f| f.get_squares())
         .map(|p| {
             p.iter()
                 .map(|s| SelectData {
@@ -58,16 +55,28 @@ pub fn render() -> element::Any {
                         } => event::quit(),
                         KeyEvent {
                             code: Char('w'), ..
-                        } => selection.mutate(|s| s.hover = s.hover.up_loop(1)),
+                        }
+                        | KeyEvent { code: Up, .. } => {
+                            selection.mutate(|s| s.hover = s.hover.up_loop(1))
+                        }
                         KeyEvent {
                             code: Char('a'), ..
-                        } => selection.mutate(|s| s.hover = s.hover.left_loop(1)),
+                        }
+                        | KeyEvent { code: Left, .. } => {
+                            selection.mutate(|s| s.hover = s.hover.left_loop(1))
+                        }
                         KeyEvent {
                             code: Char('s'), ..
-                        } => selection.mutate(|s| s.hover = s.hover.down_loop(1)),
+                        }
+                        | KeyEvent { code: Down, .. } => {
+                            selection.mutate(|s| s.hover = s.hover.down_loop(1))
+                        }
                         KeyEvent {
                             code: Char('d'), ..
-                        } => selection.mutate(|s| s.hover = s.hover.right_loop(1)),
+                        }
+                        | KeyEvent { code: Right, .. } => {
+                            selection.mutate(|s| s.hover = s.hover.right_loop(1))
+                        }
                         KeyEvent {
                             code: KeyCode::Enter,
                             ..
@@ -83,17 +92,11 @@ pub fn render() -> element::Any {
                                 _ => todo!("Error message"),
                             };
 
-                            if selected_piece.get_color() != chess.get().get_turn() {
-                                todo!("Error message");
-                            }
+                            let moves = selected_piece.get_moves(chess.get().get_board());
 
                             selection.mutate(|s| {
                                 s.selected = Some(s.hover.clone());
-                                s.avaliable = selected_piece
-                                    .get_moves(chess.get().get_board())
-                                    .iter()
-                                    .map(|m| m.to.clone())
-                                    .collect();
+                                s.avaliable = moves.iter().map(|m| m.to.clone()).collect();
                             });
 
                             select_mode.set(SelectionMode::SelectMove);
@@ -111,16 +114,28 @@ pub fn render() -> element::Any {
                         } => event::quit(),
                         KeyEvent {
                             code: Char('w'), ..
-                        } => selection.mutate(|s| s.hover = s.hover.up_loop(1)),
+                        }
+                        | KeyEvent { code: Up, .. } => {
+                            selection.mutate(|s| s.hover = s.hover.up_loop(1))
+                        }
                         KeyEvent {
                             code: Char('a'), ..
-                        } => selection.mutate(|s| s.hover = s.hover.left_loop(1)),
+                        }
+                        | KeyEvent { code: Left, .. } => {
+                            selection.mutate(|s| s.hover = s.hover.left_loop(1))
+                        }
                         KeyEvent {
                             code: Char('s'), ..
-                        } => selection.mutate(|s| s.hover = s.hover.down_loop(1)),
+                        }
+                        | KeyEvent { code: Down, .. } => {
+                            selection.mutate(|s| s.hover = s.hover.down_loop(1))
+                        }
                         KeyEvent {
                             code: Char('d'), ..
-                        } => selection.mutate(|s| s.hover = s.hover.right_loop(1)),
+                        }
+                        | KeyEvent { code: Right, .. } => {
+                            selection.mutate(|s| s.hover = s.hover.right_loop(1))
+                        }
                         KeyEvent { code: Esc, .. } => {
                             select_mode.set(SelectionMode::SelectPiece);
 
