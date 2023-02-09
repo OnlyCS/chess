@@ -17,7 +17,7 @@ pub fn render(piece: String, selected: Option<SelectionType>) {
 
     render! {
         Section(border: style) {
-            HStack(flex: [5, 12, 4]) {
+            HStack(flex: [2, 3, 2]) {
                 Empty()
                 Text(text: piece)
                 Empty()
