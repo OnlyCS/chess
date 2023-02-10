@@ -31,6 +31,7 @@ name = "chess-ai"
 version = "0.1.0"
 dependencies = [
  "crossterm",
+ "events_emitter",
  "intuitive",
 ]
 
@@ -91,6 +92,12 @@ dependencies = [
  "proc-macro2 0.4.30",
  "quote 0.6.13",
 ]
+
+[[package]]
+name = "events_emitter"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19ea822752927b9dcf033c360608f2ff455aae4eac992f501353bb518b1c486a"
 
 [[package]]
 name = "futures"

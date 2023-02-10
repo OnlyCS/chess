@@ -31,8 +31,8 @@ impl Chess {
         &self.turn
     }
 
-    pub fn make_move(&mut self, m: Move) -> Result<(), Box<dyn Error>> {
-        self.board.make_move(&m)?;
+    pub fn make_move(&mut self, m: &Move) -> Result<(), Box<dyn Error>> {
+        self.board.make_move(m)?;
 
         self.turn = self.turn.get_opposite();
 

@@ -5,4 +5,5 @@ edition = "2021"
 
 [dependencies]
 crossterm = "0.25.0"
-intuitive = "0.6.2"
+events_emitter = "0.1.3"
+intuitive = {version = "0.6.2", features = ["experimental"]}
