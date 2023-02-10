@@ -123,34 +123,44 @@ impl Piece for Pawn {
         }
 
         // check en-passant exists to the left
-        if let Ok(Some(ep_square)) = self.position.left(1).map(|i| board.square(&i)) {
-            if let Some(ep_piece) = ep_square.get_piece() {
-                if ep_piece.get_color() != self.get_color()
-                    && ep_piece.get_type() == PieceType::Pawn
-                    && ep_piece.get_data().expect("unreachable").can_en_passant
-                {
-                    moves.push(Move::new(
-                        self.position.clone(),
-                        ep_square.get_position().clone(),
-                        vec![MoveModifier::EnPassant],
-                    ));
-                }
+        if let Ok(Some(Some(ep_piece))) = self
+            .position
+            .left(1)
+            .map(|i| board.square(&i).map(|j| j.get_piece()))
+        {
+            if ep_piece.get_color() != self.get_color()
+                && ep_piece.get_type() == PieceType::Pawn
+                && ep_piece.get_data().expect("unreachable").can_en_passant
+            {
+                moves.push(Move::new(
+                    self.position.clone(),
+                    match self.get_color() {
+                        Color::White => ep_piece.get_position().clone().up_loop(1),
+                        Color::Black => ep_piece.get_position().clone().down_loop(1),
+                    },
+                    vec![MoveModifier::EnPassant],
+                ));
             }
         }
 
         // check en-passant exists to the right
-        if let Ok(Some(ep_square)) = self.position.right(1).map(|i| board.square(&i)) {
-            if let Some(ep_piece) = ep_square.get_piece() {
-                if ep_piece.get_color() != self.get_color()
-                    && ep_piece.get_type() == PieceType::Pawn
-                    && ep_piece.get_data().expect("unreachable").can_en_passant
-                {
-                    moves.push(Move::new(
-                        self.position.clone(),
-                        ep_square.get_position().clone(),
-                        vec![MoveModifier::EnPassant],
-                    ));
-                }
+        if let Ok(Some(Some(ep_piece))) = self
+            .position
+            .right(1)
+            .map(|i| board.square(&i).map(|j| j.get_piece()))
+        {
+            if ep_piece.get_color() != self.get_color()
+                && ep_piece.get_type() == PieceType::Pawn
+                && ep_piece.get_data().expect("unreachable").can_en_passant
+            {
+                moves.push(Move::new(
+                    self.position.clone(),
+                    match self.get_color() {
+                        Color::White => ep_piece.get_position().clone().up_loop(1),
+                        Color::Black => ep_piece.get_position().clone().down_loop(1),
+                    },
+                    vec![MoveModifier::EnPassant],
+                ));
             }
         }
 
@@ -176,20 +186,28 @@ impl Piece for Pawn {
     fn set_position(&mut self, position: Position) {
         let oldpos = self.position.clone();
 
-        if position
-            == match self.color {
-                Color::White => self.position.up(2),
-                Color::Black => self.position.down(2),
-            }
-            .unwrap_or(oldpos)
-        {
-            self.data.can_double_move = false;
-        }
-
         if self.data.can_en_passant {
             self.data.can_en_passant = false;
         }
 
+        if self.data.can_double_move {
+            self.data.can_double_move = false;
+        }
+
+        if position
+            == match self.color {
+                Color::White => oldpos.up(2),
+                Color::Black => oldpos.down(2),
+            }
+            .unwrap_or(oldpos)
+        {
+            self.data.can_en_passant = true;
+        }
+
         self.position = position;
+    }
+
+    fn get_data(&self) -> Option<&PieceData> {
+        Some(&self.data)
     }
 }

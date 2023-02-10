@@ -2,7 +2,9 @@ use std::error::Error;
 
 use crate::{
     pieces::piece::Piece,
-    types::{color::Color, etc::ToResult, file_letter::FileLetter, r#move::Move},
+    types::{
+        color::Color, etc::ToResult, file_letter::FileLetter, piece_type::PieceType, r#move::Move,
+    },
 };
 
 use super::{file::File, position::Position, square::Square};
@@ -48,13 +50,6 @@ impl Board {
             .get_piece()
             .to_result("No piece at \"from\"".into())?
             .clone();
-
-        // 1. check moves
-        let moves = piece_from.get_moves(self);
-
-        if !moves.contains(mv) {
-            return Err("Invalid move".into());
-        }
 
         // 2. move piece
         let square_to = self
@@ -116,6 +111,31 @@ impl Board {
             .iter()
             .filter_map(|x| x.get_piece())
             .collect()
+    }
+
+    pub fn is_check(&self, color: Color) -> bool {
+        let working_board = self.clone();
+
+        for mv in working_board.get_moves_for(color.get_opposite()) {
+            let mut sub_working_board = working_board.clone();
+            match sub_working_board.make_move(&mv) {
+                Ok(_) => {}
+                Err(_) => return true,
+            };
+
+            // count kings in board
+            let kings = sub_working_board
+                .get_pieces()
+                .iter()
+                .filter(|p| p.get_type() == PieceType::King)
+                .count();
+
+            if kings != 2 {
+                return true;
+            }
+        }
+
+        false
     }
 }
 

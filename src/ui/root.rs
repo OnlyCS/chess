@@ -1,7 +1,14 @@
 use crossterm::{event::MouseEvent, terminal::size};
 use intuitive::{components::*, event::handler::Propagate, state::use_state, *};
 
-use crate::{game::chess::Chess, parts::position::Position};
+use crate::{
+    game::chess::Chess,
+    parts::position::Position,
+    types::{
+        color::Color,
+        r#move::{MoveFilter, MoveModifier},
+    },
+};
 
 use super::{
     board::Board,
@@ -13,19 +20,15 @@ use super::{
 pub fn render() -> element::Any {
     let chess = use_state(Chess::default);
     let select_mode = use_state(|| SelectionMode::SelectPiece);
-
-    let helper_text = use_state(|| {
-        "WASD/Arrow Keys to move selection\nEnter to select a piece\nq to quit".to_string()
-    });
-
     let error_message = use_state(String::new);
-
+    let check = use_state(|| false);
     let selection = use_state(|| Selection {
         hover: Position::default(),
         selected: None,
         avaliable: vec![],
     });
 
+    let mut helper_text: String;
     let board_data = chess
         .get()
         .get_board()
@@ -50,6 +53,7 @@ pub fn render() -> element::Any {
     let key_hander = {
         let error_message = error_message.clone();
         let select_mode = select_mode.clone();
+        let check = check.clone();
 
         move |event| {
             match select_mode.get() {
@@ -107,7 +111,8 @@ pub fn render() -> element::Any {
                                 return Propagate::Next;
                             }
 
-                            let moves = selected_piece.get_moves(chess.get().get_board());
+                            let mut moves = selected_piece.get_moves(chess.get().get_board());
+                            moves.filter_king_check(game.get_board(), *game.get_turn());
 
                             selection.mutate(|s| {
                                 s.selected = Some(s.hover.clone());
@@ -186,18 +191,37 @@ pub fn render() -> element::Any {
                                     };
 
                                 if !available_movetos.contains(&move_to) {
-                                    error_message.set("Invalid move".to_string());
+                                    error_message
+                                        .set("Invalid move: Not in existing list".to_string());
                                     return;
                                 }
 
                                 moves.retain(|m| m.to == move_to);
+
                                 let mv = match moves.pop() {
                                     Some(m) => m,
                                     None => {
-                                        error_message.set("Invalid move".to_string());
+                                        error_message
+                                            .set("Invalid move: No moves left".to_string());
                                         return;
                                     }
                                 };
+
+                                if mv.modifiers.contains(&MoveModifier::EnPassant) {
+                                    let mut en_passant_square = mv.to.clone();
+                                    en_passant_square.rank = match *game.get_turn() {
+                                        Color::White => en_passant_square.rank - 1,
+                                        Color::Black => en_passant_square.rank + 1,
+                                    };
+                                    match game
+                                        .get_board_mut()
+                                        .square_mut(&en_passant_square)
+                                        .map(|s| s.clear())
+                                    {
+                                        Some(_) => (),
+                                        None => return,
+                                    }
+                                }
 
                                 let move_result = game.make_move(mv);
 
@@ -214,6 +238,12 @@ pub fn render() -> element::Any {
                                 });
                                 error_message.set(String::new());
                             });
+
+                            if chess.get().get_board().is_check(Color::Black)
+                                || chess.get().get_board().is_check(Color::White)
+                            {
+                                check.set(true);
+                            }
                         }
                         _ => (),
                     }
@@ -234,8 +264,8 @@ pub fn render() -> element::Any {
 
     let flex = if large_enough {
         match select_mode.get() {
-			SelectionMode::SelectPiece => helper_text.set("WASD/Arrow Keys to move selection\nEnter to select a piece\nq to quit".to_string()),
-			SelectionMode::SelectMove => helper_text.set("WASD/Arrow Keys to move selection\nEnter to move the piece\nEsc to select a different piece\nq to quit".to_string()),
+			SelectionMode::SelectPiece => helper_text = "WASD/Arrow Keys to move selection\nEnter to select a piece\nq to quit".to_string(),
+			SelectionMode::SelectMove => helper_text = "WASD/Arrow Keys to move selection\nEnter to move the piece\nEsc to select a different piece\nq to quit".to_string(),
 		}
         (
             board_width,
@@ -244,7 +274,7 @@ pub fn render() -> element::Any {
             term_height - board_height,
         )
     } else {
-        helper_text.set(format!("Increase terminal size\nCurrent: {term_width}x{term_height}\nRequired: {board_width}x{board_height}"));
+        helper_text = format!("Increase terminal size\nCurrent: {term_width}x{term_height}\nRequired: {board_width}x{board_height}");
         (0, 1, 1, 0)
     };
 
@@ -259,6 +289,10 @@ pub fn render() -> element::Any {
         error_message.set(format!("\nERROR: {}", error_message.get()));
     }
 
+    if check.get() && !helper_text.contains("Check!") {
+        helper_text = format!("Check!\n{helper_text}");
+    }
+
     render! {
         VStack(on_key: key_hander, on_mouse: mouse_handler, flex: [flex.2, flex.3]) {
             HStack(flex: [flex.0, flex.1]) {
@@ -269,7 +303,7 @@ pub fn render() -> element::Any {
                 Section(title: "Instructions") {
                     Centered() {
                         VStack() {
-                            Text(text: helper_text.get())
+                            Text(text: helper_text)
                             Text(text: error_message.get())
                         }
                     }

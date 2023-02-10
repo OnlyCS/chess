@@ -38,6 +38,10 @@ impl Chess {
 
         Ok(())
     }
+
+    pub fn get_board_mut(&mut self) -> &mut Board {
+        &mut self.board
+    }
 }
 
 impl Default for Chess {

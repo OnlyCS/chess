@@ -1,6 +1,6 @@
 use crate::parts::{board::Board, position::Position};
 
-use super::{color::Color, piece_type::PieceType};
+use super::color::Color;
 
 #[derive(PartialEq, Clone)]
 pub enum MoveModifier {
@@ -54,33 +54,15 @@ pub trait MoveFilter {
 
 impl MoveFilter for Vec<Move> {
     fn filter_king_check(&mut self, board: &Board, color: Color) {
-        self.retain(|_| {
-            let mut king_in_check = false;
+        self.retain(|mv| {
+            let mut working_board = board.clone();
+            match working_board.make_move(mv) {
+                Ok(_) => {}
+                Err(_) => return false,
+            };
 
-            for othermv in board.get_moves_for(color.other()) {
-                let mut this_board = board.clone();
-                this_board
-                    .make_move(&othermv)
-                    .expect("Failed to check for king check");
-
-                let is_king = this_board
-                    .get_squares()
-                    .iter()
-                    .any(|sq| {
-                        if let Some(piece) = sq.get_piece() {
-                            piece.get_type() == PieceType::King && *piece.get_color() == color
-                        } else {
-                            false
-                        }
-                    });
-
-                if !is_king {
-                    king_in_check = true;
-                    break;
-                }
-            }
-
-            !king_in_check
+            // check the number of kings on board
+            !working_board.is_check(color)
         });
     }
 }
