@@ -30,6 +30,7 @@ pub fn render() -> element::Any {
     let select_mode = use_state(|| SelectionMode::SelectPiece);
     let error_message = use_state(String::new);
     let check = use_state(|| false);
+    let checkmate = use_state(|| false);
     let promotion = use_state(|| false);
     let selection = use_state(|| Selection {
         hover: Position::default(),
@@ -64,9 +65,10 @@ pub fn render() -> element::Any {
         let select_mode = select_mode.clone();
         let check = check.clone();
         let promotion = promotion.clone();
+        let checkmate = checkmate.clone();
 
         move |event| {
-            if !promotion.get() {
+            if !promotion.get() && !checkmate.get() {
                 match select_mode.get() {
                     SelectionMode::SelectPiece => {
                         use intuitive::event::{
@@ -124,6 +126,14 @@ pub fn render() -> element::Any {
 
                                 let mut moves = selected_piece.get_moves(chess.get().get_board());
                                 moves.filter_king_check(game.get_board(), *game.get_turn());
+
+                                let mut cmtest = game.get_moves();
+                                cmtest.filter_king_check(game.get_board(), *game.get_turn());
+
+                                if cmtest.is_empty() {
+                                    checkmate.set(true);
+                                    return Propagate::Next;
+                                }
 
                                 selection.mutate(|s| {
                                     s.selected = Some(s.hover.clone());
@@ -266,7 +276,7 @@ pub fn render() -> element::Any {
                         }
                     }
                 };
-            } else {
+            } else if promotion.get() && !checkmate.get() {
                 use intuitive::event::{KeyCode::*, KeyEvent};
 
                 let game = chess.get();
@@ -350,9 +360,9 @@ pub fn render() -> element::Any {
     // flexing
     let (term_width, term_height) = size().expect("Error message");
 
-    let board_width = 50;
-    let board_height = 26;
-    let large_enough = term_width >= board_width && term_height >= board_height;
+    let min_term_width = 151;
+    let min_term_height = 34;
+    let large_enough = term_width >= min_term_width && term_height >= min_term_height;
 
     let flex = if large_enough {
         helper_text = match select_mode.get() {
@@ -361,13 +371,13 @@ pub fn render() -> element::Any {
 		};
 
         (
-            board_width,
-            term_width - board_width,
-            board_height,
-            term_height - board_height,
+            50,
+            term_width - 50,
+            26,
+            term_height - 26,
         )
     } else {
-        helper_text = format!("Increase terminal size\nCurrent: {term_width}x{term_height}\nRequired: {board_width}x{board_height}");
+        helper_text = format!("Increase terminal size\nCurrent: {term_width}x{term_height}\nRequired: {min_term_width}x{min_term_height}");
         (0, 1, 1, 0)
     };
 
@@ -393,7 +403,7 @@ pub fn render() -> element::Any {
                     Centered() {
                         VStack() {
                             Text(text: helper_text)
-                            Text(text: format!("{}{}", error_message.get(), if check.get() { "\nCHECK" } else { "" }))
+                            Text(text: format!("{}{} {}x{}", error_message.get(), if checkmate.get() { "\nCHECKMATE" } else if check.get() { "\nCHECK" } else { "" }, term_width, term_height))
                         }
                     }
                 }
