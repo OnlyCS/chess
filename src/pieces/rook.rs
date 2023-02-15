@@ -164,6 +164,18 @@ impl Piece for Rook {
     }
 
     fn set_position(&mut self, position: Position) {
+        if self.data.can_castle {
+            self.data.can_castle = false;
+        }
+
         self.position = position;
+    }
+
+    fn get_data(&self) -> Option<&PieceData> {
+        Some(&self.data)
+    }
+
+    fn set_data(&mut self, data: PieceData) {
+        self.data = data;
     }
 }

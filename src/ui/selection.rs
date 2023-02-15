@@ -1,4 +1,4 @@
-use crate::parts::position::Position;
+use crate::{parts::position::Position, types::r#move::Move};
 
 #[derive(Clone, Debug)]
 pub enum SelectionType {
@@ -23,7 +23,7 @@ impl Default for SelectionType {
 pub struct Selection {
     pub hover: Position,
     pub selected: Option<Position>,
-    pub avaliable: Vec<Position>,
+    pub avaliable: Vec<Move>,
 }
 
 impl Selection {
@@ -33,12 +33,24 @@ impl Selection {
         } else if let Some(selected) = &self.selected {
             if selected == pos {
                 Some(SelectionType::Selected)
-            } else if self.avaliable.contains(pos) {
+            } else if self
+                .avaliable
+                .iter()
+                .map(|x| x.clone().to)
+                .collect::<Vec<_>>()
+                .contains(pos)
+            {
                 Some(SelectionType::Available)
             } else {
                 None
             }
-        } else if self.avaliable.contains(pos) {
+        } else if self
+            .avaliable
+            .iter()
+            .map(|x| x.clone().to)
+            .collect::<Vec<_>>()
+            .contains(pos)
+        {
             Some(SelectionType::Available)
         } else {
             None

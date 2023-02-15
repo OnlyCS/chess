@@ -210,4 +210,8 @@ impl Piece for Pawn {
     fn get_data(&self) -> Option<&PieceData> {
         Some(&self.data)
     }
+
+    fn set_data(&mut self, data: PieceData) {
+        self.data = data;
+    }
 }

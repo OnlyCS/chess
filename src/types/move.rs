@@ -7,7 +7,8 @@ pub enum MoveModifier {
     Capture,
     EnPassant,
     Promotion,
-    Castle,
+    CastleKingSide,
+    CastleQueenSide,
 }
 
 pub struct Move {

@@ -51,6 +51,7 @@ pub trait Piece {
     }
     fn copy(&self) -> Box<dyn Piece + Sync + Send>;
     fn set_position(&mut self, position: Position);
+    fn set_data(&mut self, _data: PieceData) {}
 }
 
 impl Display for dyn Piece {

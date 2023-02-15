@@ -1,4 +1,8 @@
-use crossterm::{event::MouseEvent, terminal::size};
+use crossterm::{
+    event::{KeyEvent, MouseEvent},
+    terminal::size,
+};
+
 use intuitive::{
     components::{experimental::modal::Modal, *},
     event::handler::Propagate,
@@ -13,7 +17,7 @@ use crate::{
     types::{
         color::Color,
         piece_type::PieceType,
-        r#move::{MoveFilter, MoveModifier},
+        r#move::{Move, MoveFilter, MoveModifier},
     },
 };
 
@@ -60,228 +64,30 @@ pub fn render() -> element::Any {
         .map(|f| UIFileData::create_from(f.to_vec()))
         .collect::<Vec<UIFileData>>();
 
+    // handle key events
     let key_hander = {
-        let error_message = error_message.clone();
-        let select_mode = select_mode.clone();
-        let check = check.clone();
         let promotion = promotion.clone();
         let checkmate = checkmate.clone();
+        let select_mode = select_mode.clone();
+        let error_message = error_message.clone();
+        let check = check.clone();
 
-        move |event| {
-            if !promotion.get() && !checkmate.get() {
-                match select_mode.get() {
-                    SelectionMode::SelectPiece => {
-                        use intuitive::event::{
-                            KeyCode::{self, *},
-                            KeyEvent,
-                        };
+        move |event: KeyEvent| {
+            use intuitive::event::KeyCode::*;
 
-                        match event {
-                            KeyEvent {
-                                code: Char('q'), ..
-                            } => event::quit(),
-                            KeyEvent {
-                                code: Char('w'), ..
-                            }
-                            | KeyEvent { code: Up, .. } => selection
-                                .mutate(|s| s.hover = s.hover.up(1).unwrap_or(s.hover.clone())),
-                            KeyEvent {
-                                code: Char('a'), ..
-                            }
-                            | KeyEvent { code: Left, .. } => selection
-                                .mutate(|s| s.hover = s.hover.left(1).unwrap_or(s.hover.clone())),
-                            KeyEvent {
-                                code: Char('s'), ..
-                            }
-                            | KeyEvent { code: Down, .. } => selection
-                                .mutate(|s| s.hover = s.hover.down(1).unwrap_or(s.hover.clone())),
-                            KeyEvent {
-                                code: Char('d'), ..
-                            }
-                            | KeyEvent { code: Right, .. } => selection
-                                .mutate(|s| s.hover = s.hover.right(1).unwrap_or(s.hover.clone())),
-                            KeyEvent {
-                                code: KeyCode::Enter,
-                                ..
-                            } => {
-                                let game = chess.get();
+            let is_promote = promotion.get();
+            let is_checkmate = checkmate.get();
 
-                                let selected_piece = match game
-                                    .get_board()
-                                    .square(&selection.get().hover)
-                                    .map(|s| s.get_piece())
-                                {
-                                    Some(Some(p)) => p,
-                                    _ => {
-                                        error_message
-                                            .set("No piece at these coordinates".to_string());
-                                        return Propagate::Next;
-                                    }
-                                };
+            if is_checkmate {
+                event::quit();
+            }
 
-                                if *selected_piece.get_color() != *game.get_turn() {
-                                    error_message.set("Not your turn".to_string());
-                                    return Propagate::Next;
-                                }
-
-                                let mut moves = selected_piece.get_moves(chess.get().get_board());
-                                moves.filter_king_check(game.get_board(), *game.get_turn());
-
-                                let mut cmtest = game.get_moves();
-                                cmtest.filter_king_check(game.get_board(), *game.get_turn());
-
-                                if cmtest.is_empty() {
-                                    checkmate.set(true);
-                                    return Propagate::Next;
-                                }
-
-                                selection.mutate(|s| {
-                                    s.selected = Some(s.hover.clone());
-                                    s.avaliable = moves.iter().map(|m| m.to.clone()).collect();
-                                });
-
-                                select_mode.set(SelectionMode::SelectMove);
-                                error_message.set(String::new());
-                                if selection.get().avaliable.is_empty() {
-                                    error_message.set("\nWarning: This piece has no moves. \nPress Esc to go back into piece selection mode".to_string());
-                                }
-                            }
-
-                            _ => (),
-                        }
-                    }
-                    SelectionMode::SelectMove => {
-                        use intuitive::event::{KeyCode::*, KeyEvent};
-
-                        match event {
-                            KeyEvent {
-                                code: Char('q'), ..
-                            } => event::quit(),
-                            KeyEvent {
-                                code: Char('w'), ..
-                            }
-                            | KeyEvent { code: Up, .. } => selection
-                                .mutate(|s| s.hover = s.hover.up(1).unwrap_or(s.hover.clone())),
-                            KeyEvent {
-                                code: Char('a'), ..
-                            }
-                            | KeyEvent { code: Left, .. } => selection
-                                .mutate(|s| s.hover = s.hover.left(1).unwrap_or(s.hover.clone())),
-                            KeyEvent {
-                                code: Char('s'), ..
-                            }
-                            | KeyEvent { code: Down, .. } => selection
-                                .mutate(|s| s.hover = s.hover.down(1).unwrap_or(s.hover.clone())),
-                            KeyEvent {
-                                code: Char('d'), ..
-                            }
-                            | KeyEvent { code: Right, .. } => selection
-                                .mutate(|s| s.hover = s.hover.right(1).unwrap_or(s.hover.clone())),
-                            KeyEvent { code: Esc, .. } => {
-                                select_mode.set(SelectionMode::SelectPiece);
-
-                                selection.mutate(|s| {
-                                    s.selected = None;
-                                    s.avaliable = vec![];
-                                });
-                                error_message.set(String::new());
-                            }
-                            KeyEvent { code: Enter, .. } => {
-                                chess.mutate(|game| {
-                                    let move_to = selection.get().hover;
-                                    let move_from = match selection.get().selected {
-                                        Some(s) => s,
-                                        None => {
-                                            error_message.set("No piece selected".to_string());
-                                            return;
-                                        }
-                                    };
-                                    let available_movetos = selection.get().avaliable;
-
-                                    let mut moves =
-                                        match game.get_board().square(&move_from).map(|s| {
-                                            s.get_piece().map(|p| p.get_moves(game.get_board()))
-                                        }) {
-                                            Some(Some(m)) => m,
-                                            _ => {
-                                                error_message.set(
-                                                    "No piece at these coordinates".to_string(),
-                                                );
-                                                return;
-                                            }
-                                        };
-
-                                    if !available_movetos.contains(&move_to) {
-                                        error_message
-                                            .set("Invalid move: Not in existing list".to_string());
-                                        return;
-                                    }
-
-                                    moves.retain(|m| m.to == move_to);
-
-                                    let mv = match moves.pop() {
-                                        Some(m) => m,
-                                        None => {
-                                            error_message
-                                                .set("Invalid move: No moves left".to_string());
-                                            return;
-                                        }
-                                    };
-
-                                    if mv.modifiers.contains(&MoveModifier::EnPassant) {
-                                        let mut en_passant_square = mv.to.clone();
-                                        en_passant_square.rank = match *game.get_turn() {
-                                            Color::White => en_passant_square.rank - 1,
-                                            Color::Black => en_passant_square.rank + 1,
-                                        };
-                                        match game
-                                            .get_board_mut()
-                                            .square_mut(&en_passant_square)
-                                            .map(|s| s.clear())
-                                        {
-                                            Some(_) => (),
-                                            None => return,
-                                        }
-                                    }
-
-                                    let move_result = game.make_move(&mv);
-
-                                    if let Err(e) = move_result {
-                                        error_message.set(format!("Movement failed: {e}"));
-                                        return;
-                                    }
-
-                                    select_mode.set(SelectionMode::SelectPiece);
-
-                                    selection.mutate(|s| {
-                                        s.selected = None;
-                                        s.avaliable = vec![];
-                                    });
-                                    error_message.set(String::new());
-
-                                    if mv.modifiers.contains(&MoveModifier::Promotion) {
-                                        promotion.set(true);
-                                    }
-                                });
-
-                                if chess.get().get_board().is_check(Color::Black)
-                                    || chess.get().get_board().is_check(Color::White)
-                                {
-                                    check.set(true);
-                                } else {
-                                    check.set(false);
-                                }
-                            }
-                            _ => (),
-                        }
-                    }
-                };
-            } else if promotion.get() && !checkmate.get() {
-                use intuitive::event::{KeyCode::*, KeyEvent};
-
+            if is_promote {
+                let promotion = promotion.clone();
+                let error_message = error_message.clone();
                 let game = chess.get();
 
-                let pawns = game
+                let mut pawns = game
                     .get_board()
                     .get_pieces()
                     .iter()
@@ -297,65 +103,225 @@ pub fn render() -> element::Any {
                     error_message.set("Something went wrong".to_string());
                 }
 
-                match event {
-                    KeyEvent {
-                        code: Char('b'), ..
-                    } => chess.mutate(|game| {
-                        if let Some(s) = game.get_board_mut().square_mut(pawns[0].get_position()) {
-                            s.set_piece(Box::new(Bishop::new(
-                                *pawns[0].get_color(),
-                                pawns[0].get_position().clone(),
-                            )))
-                        } else {
-                            error_message.set("Something went wrong".to_string());
+                chess.mutate(|game| {
+                    if let Some(p) = pawns.pop() {
+                        if let Some(s) = game.get_board_mut().square_mut(p.get_position()) {
+                            match event.code {
+                                Char('b') => s.set_piece(Box::new(Bishop::new(
+                                    *p.get_color(),
+                                    p.get_position().clone(),
+                                ))),
+                                Char('k') => s.set_piece(Box::new(Knight::new(
+                                    *p.get_color(),
+                                    p.get_position().clone(),
+                                ))),
+                                Char('r') => s.set_piece(Box::new(Rook::new(
+                                    *p.get_color(),
+                                    p.get_position().clone(),
+                                ))),
+                                Char('q') => s.set_piece(Box::new(Queen::new(
+                                    *p.get_color(),
+                                    p.get_position().clone(),
+                                ))),
+                                _ => {
+                                    error_message.set("Invalid promotion".to_string());
+                                }
+                            }
                         }
-                    }),
-                    KeyEvent {
-                        code: Char('k'), ..
-                    } => chess.mutate(|game| {
-                        if let Some(s) = game.get_board_mut().square_mut(pawns[0].get_position()) {
-                            s.set_piece(Box::new(Knight::new(
-                                *pawns[0].get_color(),
-                                pawns[0].get_position().clone(),
-                            )));
-                        } else {
-                            error_message.set("Something went wrong".to_string());
-                        }
-                    }),
-                    KeyEvent {
-                        code: Char('r'), ..
-                    } => chess.mutate(|game| {
-                        if let Some(s) = game.get_board_mut().square_mut(pawns[0].get_position()) {
-                            s.set_piece(Box::new(Rook::new(
-                                *pawns[0].get_color(),
-                                pawns[0].get_position().clone(),
-                            )));
-                        } else {
-                            error_message.set("Something went wrong".to_string());
-                        }
-                    }),
-                    KeyEvent {
-                        code: Char('q'), ..
-                    } => chess.mutate(|game| {
-                        if let Some(s) = game.get_board_mut().square_mut(pawns[0].get_position()) {
-                            s.set_piece(Box::new(Queen::new(
-                                *pawns[0].get_color(),
-                                pawns[0].get_position().clone(),
-                            )));
-                        } else {
-                            error_message.set("Something went wrong".to_string());
-                        }
-                    }),
-                    _ => (),
-                }
+                    }
+                });
 
                 promotion.set(false);
+                return Propagate::Next;
             }
+
+            match event.code {
+                Char('q') => event::quit(),
+                Char('w') | Up => {
+                    selection.mutate(|s| s.hover = s.hover.up(1).unwrap_or(s.hover.clone()))
+                }
+                Char('a') | Left => {
+                    selection.mutate(|s| s.hover = s.hover.left(1).unwrap_or(s.hover.clone()))
+                }
+                Char('s') | Down => {
+                    selection.mutate(|s| s.hover = s.hover.down(1).unwrap_or(s.hover.clone()))
+                }
+                Char('d') | Right => {
+                    selection.mutate(|s| s.hover = s.hover.right(1).unwrap_or(s.hover.clone()))
+                }
+                Enter => {
+                    match select_mode.get() {
+                        SelectionMode::SelectPiece => {
+                            let game = chess.get();
+                            let board = game.get_board();
+
+                            // check for mate
+                            if board.is_mate(*game.get_turn()) {
+                                checkmate.set(true);
+                                return Propagate::Next;
+                            }
+
+                            // check to make sure there is a piece at the selected square
+                            let selected_piece = match board
+                                .square(&selection.get().hover)
+                                .and_then(|s| s.get_piece())
+                            {
+                                Some(p) => p,
+                                _ => {
+                                    error_message.set("No piece at these coordinates".to_string());
+                                    return Propagate::Next;
+                                }
+                            };
+
+                            // check to make sure it is the correct color's turn
+                            if *selected_piece.get_color() != *game.get_turn() {
+                                error_message.set("Not your turn".to_string());
+                                return Propagate::Next;
+                            }
+
+                            // get the moves for the selected piece
+                            let mut moves = selected_piece.get_moves(board);
+                            moves.filter_king_check(game.get_board(), *game.get_turn());
+
+                            selection.mutate(|s| {
+                                s.selected = Some(s.hover.clone());
+                                s.avaliable = moves;
+                            });
+
+                            select_mode.set(SelectionMode::SelectMove);
+                            error_message.set(String::new());
+
+                            if selection.get().avaliable.is_empty() {
+                                error_message.set("\nWarning: This piece has no moves. \nPress Esc to go back into piece selection mode".to_string());
+                            }
+                        }
+                        SelectionMode::SelectMove => {
+                            chess.mutate(|game| {
+                                let mut moves = selection.get().avaliable;
+                                let move_to = selection.get().hover;
+
+                                // check to make sure the move is valid
+                                if !moves
+                                    .iter()
+                                    .map(|m| m.clone().to)
+                                    .collect::<Vec<Position>>()
+                                    .contains(&move_to)
+                                {
+                                    error_message.set("Invalid move".to_string());
+                                    return;
+                                }
+
+                                // grab the move
+                                moves.retain(|m| m.to == move_to);
+                                let mv = match moves.pop() {
+                                    Some(m) => m,
+                                    None => {
+                                        error_message.set("Oops, something went wrong".to_string());
+                                        return;
+                                    }
+                                };
+
+                                // en passant
+                                if mv.modifiers.contains(&MoveModifier::EnPassant) {
+                                    let mut en_passant_square = mv.to.clone();
+                                    en_passant_square.rank = match *game.get_turn() {
+                                        Color::White => en_passant_square.rank - 1,
+                                        Color::Black => en_passant_square.rank + 1,
+                                    };
+                                    match game
+                                        .get_board_mut()
+                                        .square_mut(&en_passant_square)
+                                        .map(|s| s.clear())
+                                    {
+                                        Some(_) => (),
+                                        None => return,
+                                    }
+                                }
+
+                                // castling queenside
+                                if mv.modifiers.contains(&MoveModifier::CastleQueenSide) {
+                                    let rook_from = mv.to.clone().left(2).expect("Unreachable");
+                                    let rook_to = mv.to.clone().right(1).expect("Unreachable");
+
+                                    match game.get_board_mut().make_move(&Move::new(
+                                        rook_from,
+                                        rook_to,
+                                        vec![],
+                                    )) {
+                                        Ok(_) => (),
+                                        Err(e) => {
+                                            error_message.set(format!("Movement failed: {e}"));
+                                            return;
+                                        }
+                                    }
+                                }
+
+                                // castling kingside
+                                if mv.modifiers.contains(&MoveModifier::CastleKingSide) {
+                                    let rook_from = mv.to.clone().right(1).expect("Unreachable");
+                                    let rook_to = mv.to.clone().left(1).expect("Unreachable");
+
+                                    match game.make_move(&Move::new(rook_from, rook_to, vec![])) {
+                                        Ok(_) => (),
+                                        Err(e) => {
+                                            error_message.set(format!("Movement failed: {e}"));
+                                            return;
+                                        }
+                                    }
+                                }
+
+                                // move piece
+                                let move_result = game.make_move(&mv);
+                                if let Err(e) = move_result {
+                                    error_message.set(format!("Movement failed: {e}"));
+                                    return;
+                                }
+
+                                // reset
+                                select_mode.set(SelectionMode::SelectPiece);
+                                error_message.set(String::new());
+                                selection.mutate(|s| {
+                                    s.selected = None;
+                                    s.avaliable = vec![];
+                                });
+
+                                // promotion
+                                if mv.modifiers.contains(&MoveModifier::Promotion) {
+                                    promotion.set(true);
+                                }
+
+                                // check
+                                if game.get_board().is_check(Color::Black)
+                                    || game.get_board().is_check(Color::White)
+                                {
+                                    check.set(true);
+                                } else {
+                                    check.set(false);
+                                }
+                            });
+                        }
+                    }
+                }
+                Esc => match select_mode.get() {
+                    SelectionMode::SelectPiece => (),
+                    SelectionMode::SelectMove => {
+                        select_mode.set(SelectionMode::SelectPiece);
+                        error_message.set(String::new());
+                        selection.mutate(|s| {
+                            s.selected = None;
+                            s.avaliable = vec![];
+                        });
+                    }
+                },
+                _ => (),
+            }
+
             Propagate::Next
         }
     };
 
-    let mouse_handler = { move |_: MouseEvent| Propagate::Stop };
+    // remove mouse handler
+    let mouse_handler = move |_: MouseEvent| Propagate::Stop;
 
     // flexing
     let (term_width, term_height) = size().expect("Error message");
@@ -370,12 +336,7 @@ pub fn render() -> element::Any {
 			SelectionMode::SelectMove => "WASD/Arrow Keys to move selection\nEnter to move the piece\nEsc to select a different piece\nq to quit".to_string(),
 		};
 
-        (
-            50,
-            term_width - 50,
-            26,
-            term_height - 26,
-        )
+        (50, term_width - 50, 26, term_height - 26)
     } else {
         helper_text = format!("Increase terminal size\nCurrent: {term_width}x{term_height}\nRequired: {min_term_width}x{min_term_height}");
         (0, 1, 1, 0)
@@ -403,7 +364,7 @@ pub fn render() -> element::Any {
                     Centered() {
                         VStack() {
                             Text(text: helper_text)
-                            Text(text: format!("{}{} {}x{}", error_message.get(), if checkmate.get() { "\nCHECKMATE" } else if check.get() { "\nCHECK" } else { "" }, term_width, term_height))
+                            Text(text: format!("{}{}", error_message.get(), if checkmate.get() { "\nCHECKMATE" } else if check.get() { "\nCHECK" } else { "" }))
                         }
                     }
                 }

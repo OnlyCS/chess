@@ -3,7 +3,11 @@ use std::error::Error;
 use crate::{
     pieces::piece::Piece,
     types::{
-        color::Color, etc::ToResult, file_letter::FileLetter, piece_type::PieceType, r#move::Move,
+        color::Color,
+        etc::ToResult,
+        file_letter::FileLetter,
+        piece_type::PieceType,
+        r#move::{Move, MoveFilter},
     },
 };
 
@@ -136,6 +140,13 @@ impl Board {
         }
 
         false
+    }
+
+    pub fn is_mate(&self, color: Color) -> bool {
+        let mut moves = self.get_moves_for(color);
+        moves.filter_king_check(self, color);
+
+        moves.is_empty()
     }
 }
 

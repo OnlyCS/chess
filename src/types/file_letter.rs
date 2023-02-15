@@ -114,14 +114,14 @@ impl From<char> for FileLetter {
 impl From<FileLetter> for u8 {
     fn from(val: FileLetter) -> Self {
         match val {
-            FileLetter::A => 0,
-            FileLetter::B => 1,
-            FileLetter::C => 2,
-            FileLetter::D => 3,
-            FileLetter::E => 4,
-            FileLetter::F => 5,
-            FileLetter::G => 6,
-            FileLetter::H => 7,
+            FileLetter::A => 1,
+            FileLetter::B => 2,
+            FileLetter::C => 3,
+            FileLetter::D => 4,
+            FileLetter::E => 5,
+            FileLetter::F => 6,
+            FileLetter::G => 7,
+            FileLetter::H => 8,
         }
     }
 }
@@ -129,15 +129,15 @@ impl From<FileLetter> for u8 {
 impl From<u8> for FileLetter {
     fn from(val: u8) -> Self {
         match val {
-            0 => FileLetter::A,
-            1 => FileLetter::B,
-            2 => FileLetter::C,
-            3 => FileLetter::D,
-            4 => FileLetter::E,
-            5 => FileLetter::F,
-            6 => FileLetter::G,
-            7 => FileLetter::H,
-            _ => panic!("FileLetter cannot be created from a number other than 0-7"),
+            1 => FileLetter::A,
+            2 => FileLetter::B,
+            3 => FileLetter::C,
+            4 => FileLetter::D,
+            5 => FileLetter::E,
+            6 => FileLetter::F,
+            7 => FileLetter::G,
+            8 => FileLetter::H,
+            _ => panic!("FileLetter cannot be created from a number other than 1-8"),
         }
     }
 }
