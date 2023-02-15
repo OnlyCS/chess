@@ -12,6 +12,11 @@ Now, in rust. What a beauty.
 
 `src/pieces` contains implementations for all of the pieces, including move generation.
 
-This project depends on the [intuitive](https://docs.rs/intuitive/latest/intuitive/index.html) TUI library to make terminal look pretty, because that's
-what really matters at the end of the day. This project will also have an AI using NEAT 
-(probably using [this](https://github.com/TLmaK0/rustneat) library), trained on stockfish.
+## roadmap
+
+- [x] implement all pieces
+- [x] implement move generation
+- [x] full tui
+- [] conversion to uci and other standard chess protocols
+- [] the ai part (will train on pleco)
+- [] maybe networking in the future

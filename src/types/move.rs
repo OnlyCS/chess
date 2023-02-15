@@ -1,12 +1,13 @@
 use crate::parts::{board::Board, position::Position};
 
-use super::color::Color;
+use super::{color::Color, piece_type::PieceType};
 
 #[derive(PartialEq, Clone)]
 pub enum MoveModifier {
     Capture,
     EnPassant,
-    Promotion,
+    PromotionUnknown,
+    Promotion(PieceType),
     CastleKingSide,
     CastleQueenSide,
 }

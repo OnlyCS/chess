@@ -1,8 +1,9 @@
 #![warn(clippy::unwrap_used, clippy::panic)]
 #![allow(clippy::needless_update, clippy::borrowed_box)]
 
-use crate::ui::root::Root;
-use intuitive::terminal::Terminal;
+extern crate intuitive;
+extern crate pleco;
+extern crate rustneat;
 
 pub mod game;
 pub mod parts;
@@ -10,6 +11,13 @@ pub mod pieces;
 pub mod types;
 pub mod ui;
 
-fn main() {
-	Terminal::new(Root::new()).expect("Failed to create UI").run().expect("Failed to run UI");
+use std::error::Error;
+
+use crate::ui::root::Root;
+use intuitive::terminal::Terminal;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    Terminal::new(Root::new())?.run()?;
+
+    Ok(())
 }

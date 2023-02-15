@@ -3,6 +3,7 @@ use std::{
     fmt::{Display, Formatter},
 };
 
+#[derive(Clone, Debug)]
 pub enum PieceType {
     Pawn,
     Knight,

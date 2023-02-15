@@ -286,7 +286,7 @@ pub fn render() -> element::Any {
                                 });
 
                                 // promotion
-                                if mv.modifiers.contains(&MoveModifier::Promotion) {
+                                if mv.modifiers.contains(&MoveModifier::PromotionUnknown) {
                                     promotion.set(true);
                                 }
 

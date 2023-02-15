@@ -168,7 +168,7 @@ impl Piece for Pawn {
             if m.to.rank == 8 && self.color == Color::White
                 || m.to.rank == 1 && self.color == Color::Black
             {
-                m.modifiers.push(MoveModifier::Promotion);
+                m.modifiers.push(MoveModifier::PromotionUnknown);
             }
         }
 
