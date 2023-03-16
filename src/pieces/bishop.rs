@@ -143,7 +143,7 @@ impl Piece for Bishop {
         moves
     }
 
-    fn copy(&self) -> Box<dyn Piece + Sync + Send> {
+    fn clone(&self) -> Box<dyn Piece + Sync + Send> {
         Box::new(Self {
             color: self.color,
             position: self.position.clone(),

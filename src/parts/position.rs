@@ -1,4 +1,4 @@
-use std::error::Error;
+use anyhow::Result;
 
 use crate::types::file_letter::FileLetter;
 
@@ -23,7 +23,7 @@ impl Position {
         self.file < FileLetter::A || self.file > FileLetter::H || self.rank < 1 || self.rank > 8
     }
 
-    pub fn up(&self, ct: i32) -> Result<Self, Box<dyn Error>> {
+    pub fn up(&self, ct: i32) -> Result<Self> {
         let rank = self.rank as i32 + ct;
 
         if rank > 8 {
@@ -43,7 +43,7 @@ impl Position {
         Self::new(self.file.clone(), rank as u8)
     }
 
-    pub fn down(&self, ct: i32) -> Result<Self, Box<dyn Error>> {
+    pub fn down(&self, ct: i32) -> Result<Self> {
         let rank = self.rank as i32 - ct;
 
         if rank < 1 {
@@ -63,7 +63,7 @@ impl Position {
         Self::new(self.file.clone(), rank as u8)
     }
 
-    fn left_recursive(pos: Self, ct: i32) -> Result<Self, Box<dyn Error>> {
+    fn left_recursive(pos: Self, ct: i32) -> Result<Self> {
         if ct == 0 {
             return Ok(pos);
         }
@@ -83,7 +83,7 @@ impl Position {
         Self::left_recursive_loop(pos, ct - 1)
     }
 
-    fn right_recursive(pos: Self, ct: i32) -> Result<Self, Box<dyn Error>> {
+    fn right_recursive(pos: Self, ct: i32) -> Result<Self> {
         if ct == 0 {
             return Ok(pos);
         }
@@ -103,7 +103,7 @@ impl Position {
         Self::right_recursive_loop(pos, ct - 1)
     }
 
-    pub fn right(&self, ct: i32) -> Result<Self, Box<dyn Error>> {
+    pub fn right(&self, ct: i32) -> Result<Self> {
         if ct == 0 {
             return Ok(self.clone());
         }
@@ -115,7 +115,7 @@ impl Position {
         Self::right_recursive_loop(self.clone(), ct)
     }
 
-    pub fn left(&self, ct: i32) -> Result<Self, Box<dyn Error>> {
+    pub fn left(&self, ct: i32) -> Result<Self> {
         if ct == 0 {
             return Ok(self.clone());
         }

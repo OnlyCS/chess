@@ -5,7 +5,7 @@ use crate::{
     types::{color::Color, piece_type::PieceType, r#move::Move},
 };
 
-pub fn unicode_from_hex(hex: &str) -> Result<char, Box<dyn Error>> {
+pub fn unicode_from_hex(hex: &str) -> Result<char> {
     let code = u32::from_str_radix(hex, 16)?;
     let chr = std::char::from_u32(code).ok_or("Invalid unicode code")?;
     Ok(chr)
@@ -18,11 +18,17 @@ pub struct PieceData {
     pub can_castle: bool,
 }
 
-pub trait Piece {
+pub trait Piece
+where
+    Self: Send + Sync,
+{
     fn get_color(&self) -> &Color;
     fn get_position(&self) -> &Position;
     fn get_type(&self) -> PieceType;
-    fn get_moves(&self, board: &Board) -> Vec<Move>;
+    fn get_moves<T>(&self, board: &Board<T>) -> Vec<Move>
+    where
+        T: Piece;
+
     fn to_string(&self) -> String {
         match *self.get_color() {
             Color::White => match self.get_type() {
@@ -49,7 +55,9 @@ pub trait Piece {
     fn get_data(&self) -> Option<&PieceData> {
         None
     }
-    fn copy(&self) -> Box<dyn Piece + Sync + Send>;
+    fn clone<T>(&self) -> T
+    where
+        T: Piece;
     fn set_position(&mut self, position: Position);
     fn set_data(&mut self, _data: PieceData) {}
 }
@@ -57,11 +65,5 @@ pub trait Piece {
 impl Display for dyn Piece {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.to_string())
-    }
-}
-
-impl Clone for Box<dyn Piece + Sync + Send> {
-    fn clone(&self) -> Self {
-        self.copy()
     }
 }

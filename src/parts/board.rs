@@ -1,4 +1,4 @@
-use std::error::Error;
+use anyhow::Result;
 
 use crate::{
     pieces::piece::Piece,
@@ -13,12 +13,12 @@ use crate::{
 
 use super::{file::File, position::Position, square::Square};
 
-pub struct Board {
-    files: Vec<File>,
+pub struct Board<T: Piece> {
+    files: Vec<File<T>>,
 }
 
-impl Board {
-    pub fn new() -> Board {
+impl<T: Piece> Board<T> {
+    pub fn new() -> Board<T> {
         let mut board = Self { files: Vec::new() };
         for letter in FileLetter::vec_all() {
             board.files.push(File::new(letter));
@@ -27,27 +27,27 @@ impl Board {
         board
     }
 
-    pub fn file<T: Into<FileLetter> + Clone>(&self, letter: &T) -> Option<&File> {
+    pub fn file<K: Into<FileLetter> + Clone>(&self, letter: &K) -> Option<&File<T>> {
         self.files
             .iter()
             .find(|file| file.letter == letter.clone().into())
     }
 
-    pub fn file_mut<T: Into<FileLetter> + Clone>(&mut self, letter: &T) -> Option<&mut File> {
+    pub fn file_mut<K: Into<FileLetter> + Clone>(&mut self, letter: &K) -> Option<&mut File<T>> {
         self.files
             .iter_mut()
             .find(|file| file.letter == letter.clone().into())
     }
 
-    pub fn square(&self, position: &Position) -> Option<&Square> {
+    pub fn square(&self, position: &Position) -> Option<&Square<T>> {
         self.file(&position.file)?.rank(position.rank)
     }
 
-    pub fn square_mut(&mut self, position: &Position) -> Option<&mut Square> {
+    pub fn square_mut(&mut self, position: &Position) -> Option<&mut Square<T>> {
         self.file_mut(&position.file)?.rank_mut(position.rank)
     }
 
-    pub fn make_move(&mut self, mv: &Move) -> Result<(), Box<dyn Error>> {
+    pub fn make_move(&mut self, mv: &Move) -> Result<()> {
         let mut piece_from = self
             .square(&mv.from)
             .to_result("Move \"from\" invalid".into())?
@@ -85,11 +85,11 @@ impl Board {
         moves
     }
 
-    pub fn get_files(&self) -> &Vec<File> {
+    pub fn get_files(&self) -> &Vec<File<T>> {
         &self.files
     }
 
-    pub fn get_squares(&self) -> Vec<&Square> {
+    pub fn get_squares(&self) -> Vec<&Square<T>> {
         let files = &self.files;
         let iter = files.iter();
         let mut squares = Vec::with_capacity(64);
@@ -103,14 +103,14 @@ impl Board {
         squares
     }
 
-    pub fn get_squares_mut(&mut self) -> Vec<&mut Square> {
+    pub fn get_squares_mut(&mut self) -> Vec<&mut Square<T>> {
         self.files
             .iter_mut()
             .flat_map(|x| x.get_squares_mut())
             .collect()
     }
 
-    pub fn get_pieces(&self) -> Vec<&Box<dyn Piece + Send + Sync>> {
+    pub fn get_pieces(&self) -> Vec<&T> {
         self.get_squares()
             .iter()
             .filter_map(|x| x.get_piece())
@@ -150,13 +150,13 @@ impl Board {
     }
 }
 
-impl Default for Board {
+impl<T: Piece> Default for Board<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Clone for Board {
+impl<T: Piece> Clone for Board<T> {
     fn clone(&self) -> Self {
         Self {
             files: self.files.to_vec(),

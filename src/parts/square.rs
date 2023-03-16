@@ -2,12 +2,12 @@ use crate::pieces::piece::Piece;
 
 use super::position::Position;
 
-pub struct Square {
+pub struct Square<P: Piece> {
     position: Position,
-    piece: Option<Box<dyn Piece + Sync + Send>>,
+    piece: Option<P>,
 }
 
-impl Square {
+impl<P: Piece> Square<P> {
     pub fn new(position: Position) -> Self {
         Self {
             position,
@@ -15,15 +15,15 @@ impl Square {
         }
     }
 
-    pub fn set_piece(&mut self, piece: Box<dyn Piece + Sync + Send>) {
+    pub fn set_piece(&mut self, piece: P) {
         self.piece = Some(piece);
     }
 
-    pub fn get_piece(&self) -> Option<&Box<dyn Piece + Sync + Send>> {
+    pub fn get_piece(&self) -> Option<&P> {
         self.piece.as_ref()
     }
 
-    pub fn get_piece_mut(&mut self) -> Option<&mut Box<dyn Piece + Sync + Send>> {
+    pub fn get_piece_mut(&mut self) -> Option<&mut P> {
         self.piece.as_mut()
     }
 

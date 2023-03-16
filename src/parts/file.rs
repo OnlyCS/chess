@@ -1,16 +1,19 @@
 use crate::{
-    pieces::{bishop::Bishop, king::King, knight::Knight, pawn::Pawn, queen::Queen, rook::Rook},
+    pieces::{
+        bishop::Bishop, king::King, knight::Knight, pawn::Pawn, piece::Piece, queen::Queen,
+        rook::Rook,
+    },
     types::{color::Color, file_letter::FileLetter},
 };
 
 use super::{position::Position, square::Square};
 
-pub struct File {
+pub struct File<T: Piece> {
     pub letter: FileLetter,
-    squares: Vec<Square>,
+    squares: Vec<Square<T>>,
 }
 
-impl File {
+impl<T: Piece> File<T> {
     pub fn new(letter: FileLetter) -> Self {
         let mut squares = Vec::new();
 
@@ -106,24 +109,24 @@ impl File {
         Self { letter, squares }
     }
 
-    pub fn rank(&self, rank: u8) -> Option<&Square> {
+    pub fn rank(&self, rank: u8) -> Option<&Square<T>> {
         self.squares.get(rank as usize - 1)
     }
 
-    pub fn rank_mut(&mut self, rank: u8) -> Option<&mut Square> {
+    pub fn rank_mut(&mut self, rank: u8) -> Option<&mut Square<T>> {
         self.squares.get_mut(rank as usize - 1)
     }
 
-    pub fn get_squares(&self) -> &Vec<Square> {
+    pub fn get_squares(&self) -> &Vec<Square<T>> {
         &self.squares
     }
 
-    pub fn get_squares_mut(&mut self) -> &mut Vec<Square> {
+    pub fn get_squares_mut(&mut self) -> &mut Vec<Square<T>> {
         &mut self.squares
     }
 }
 
-impl Clone for File {
+impl<T: Piece> Clone for File<T> {
     fn clone(&self) -> Self {
         Self {
             letter: self.letter.clone(),
