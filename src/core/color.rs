@@ -1,3 +1,6 @@
+use std::fmt::{Display, Formatter};
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Color {
     Black,
     White,
@@ -11,14 +14,7 @@ impl Color {
         }
     }
 
-    pub fn get_string(&self) -> String {
-        match self {
-            Color::White => "White".to_string(),
-            Color::Black => "Black".to_string(),
-        }
-    }
-
-    pub fn get_char(&self) -> char {
+    pub fn fen(&self) -> char {
         match self {
             Color::White => 'w',
             Color::Black => 'b',
@@ -58,22 +54,11 @@ impl From<bool> for Color {
     }
 }
 
-impl PartialEq for Color {
-    fn eq(&self, other: &Self) -> bool {
-        matches!(
-            (self, other),
-            (Color::White, Color::White) | (Color::Black, Color::Black)
-        )
-    }
-}
-
-impl Clone for Color {
-    fn clone(&self) -> Self {
+impl Display for Color {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Color::White => Color::White,
-            Color::Black => Color::Black,
+            Color::White => write!(f, "White"),
+            Color::Black => write!(f, "Black"),
         }
     }
 }
-
-impl Copy for Color {}

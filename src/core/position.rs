@@ -1,7 +1,8 @@
-use anyhow::Result;
+use anyhow::{ensure, Result};
 
-use crate::types::file_letter::FileLetter;
+use super::file::FileLetter;
 
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Position {
     pub file: FileLetter,
     pub rank: u8,
@@ -16,7 +17,7 @@ impl Position {
     }
 
     pub fn copy(&self) -> Self {
-        Self::new(self.file.clone(), self.rank)
+        Self::new(self.file, self.rank)
     }
 
     pub fn is_oob(&self) -> bool {
@@ -26,11 +27,9 @@ impl Position {
     pub fn up(&self, ct: i32) -> Result<Self> {
         let rank = self.rank as i32 + ct;
 
-        if rank > 8 {
-            return Err("Cannot go up from rank 8".into());
-        }
+        ensure!(rank <= 8, "Cannot go up from rank 8");
 
-        Ok(Self::new(self.file.clone(), rank as u8))
+        Ok(Self::new(self.file, rank as u8))
     }
 
     pub fn up_loop(&self, ct: i32) -> Self {
@@ -40,17 +39,15 @@ impl Position {
             rank -= 8;
         }
 
-        Self::new(self.file.clone(), rank as u8)
+        Self::new(self.file, rank as u8)
     }
 
     pub fn down(&self, ct: i32) -> Result<Self> {
         let rank = self.rank as i32 - ct;
 
-        if rank < 1 {
-            return Err("Cannot go down from rank 1".into());
-        }
+        ensure!(rank >= 1, "Cannot go down from rank 1");
 
-        Ok(Self::new(self.file.clone(), rank as u8))
+        Ok(Self::new(self.file, rank as u8))
     }
 
     pub fn down_loop(&self, ct: i32) -> Self {
@@ -60,7 +57,7 @@ impl Position {
             rank += 8;
         }
 
-        Self::new(self.file.clone(), rank as u8)
+        Self::new(self.file, rank as u8)
     }
 
     fn left_recursive(pos: Self, ct: i32) -> Result<Self> {
@@ -105,43 +102,35 @@ impl Position {
 
     pub fn right(&self, ct: i32) -> Result<Self> {
         if ct == 0 {
-            return Ok(self.clone());
+            return Ok(*self);
         }
 
-        Self::right_recursive(self.clone(), ct)
+        Self::right_recursive(*self, ct)
     }
 
     pub fn right_loop(&self, ct: i32) -> Self {
-        Self::right_recursive_loop(self.clone(), ct)
+        Self::right_recursive_loop(*self, ct)
     }
 
     pub fn left(&self, ct: i32) -> Result<Self> {
         if ct == 0 {
-            return Ok(self.clone());
+            return Ok(*self);
         }
 
-        Self::left_recursive(self.clone(), ct)
+        Self::left_recursive(*self, ct)
     }
 
     pub fn left_loop(&self, ct: i32) -> Self {
-        Self::left_recursive_loop(self.clone(), ct)
+        Self::left_recursive_loop(*self, ct)
     }
-}
 
-impl PartialEq for Position {
-    fn eq(&self, other: &Self) -> bool {
-        self.file == other.file && self.rank == other.rank
+    pub fn fen(&self) -> String {
+        format!("{}{}", self.file.fen(), self.rank)
     }
 }
 
 impl Default for Position {
     fn default() -> Self {
         Self::new('a', 1)
-    }
-}
-
-impl Clone for Position {
-    fn clone(&self) -> Self {
-        Self::new(self.file.clone(), self.rank)
     }
 }
