@@ -7,7 +7,7 @@ pub enum Color {
 }
 
 impl Color {
-    pub fn get_opposite(&self) -> Color {
+    pub fn opposite(&self) -> Color {
         match self {
             Color::White => Color::Black,
             Color::Black => Color::White,
@@ -22,14 +22,7 @@ impl Color {
     }
 
     pub fn flip(&mut self) {
-        *self = self.other();
-    }
-
-    pub fn other(&self) -> Color {
-        match self {
-            Color::White => Color::Black,
-            Color::Black => Color::White,
-        }
+        *self = self.opposite();
     }
 }
 

@@ -155,7 +155,7 @@ impl From<u8> for FileLetter {
 #[derive(Debug, Clone)]
 pub struct File {
     pub letter: FileLetter,
-    squares: Vec<Square>,
+    pub squares: Vec<Square>,
 }
 
 impl File {
@@ -237,11 +237,11 @@ impl File {
                     PieceType::King,
                 ));
 
-                squares[1].set_piece(Piece::new(
-                    Color::White,
-                    Position::new(letter, 2),
-                    PieceType::Pawn,
-                ));
+                squares[7].set_piece(Piece::new(
+                    Color::Black,
+                    Position::new(letter, 8),
+                    PieceType::King,
+                ))
             }
         }
 
@@ -284,5 +284,11 @@ impl ToVec<Square> for File {
 
     fn to_vec_mut(&mut self) -> Vec<&mut Square> {
         self.squares.iter_mut().collect()
+    }
+}
+
+impl Default for File {
+    fn default() -> Self {
+        Self::new(FileLetter::A)
     }
 }

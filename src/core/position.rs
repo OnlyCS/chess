@@ -2,7 +2,7 @@ use anyhow::{ensure, Result};
 
 use super::file::FileLetter;
 
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub struct Position {
     pub file: FileLetter,
     pub rank: u8,

@@ -51,3 +51,9 @@ impl Square {
         }
     }
 }
+
+impl Default for Square {
+    fn default() -> Self {
+        Self::new(Position::default())
+    }
+}

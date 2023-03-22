@@ -4,7 +4,7 @@ use crate::core::{
     board::Board, color::Color, piece_move::Move, piece_move::MoveModifier, position::Position,
 };
 
-#[derive(Clone, Debug, Copy, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Copy, Eq, PartialEq)]
 pub enum PieceType {
     Pawn,
     Knight,
@@ -44,23 +44,15 @@ impl Display for PieceType {
 pub struct Piece {
     color: Color,
     position: Position,
-    piece_type: PieceType,
-    can_double_move: bool,
+    pub piece_type: PieceType,
 }
 
 impl Piece {
     pub fn new(color: Color, position: Position, piece_type: PieceType) -> Self {
-        let rank = position.rank;
-
         Self {
             color,
             position,
             piece_type,
-            can_double_move: piece_type == PieceType::Pawn
-                && match color {
-                    Color::White => rank == 2,
-                    Color::Black => rank == 7,
-                },
         }
     }
 
@@ -85,28 +77,10 @@ impl Piece {
             PieceType::Pawn => {
                 let mut moves = Vec::new();
 
-                // check a double move
-                if self.can_double_move {
-                    if let Ok(Some(square)) = match self.color {
-                        Color::White => self.position.up(2).map(|i| board.square(&i)),
-                        Color::Black => self.position.down(2).map(|i| board.square(&i)),
-                    } {
-                        if square.is_empty() {
-                            moves.push(Move {
-                                from: self.position,
-                                to: *square.get_position(),
-                                modifiers: vec![MoveModifier::PawnDoubleMove],
-                                color: self.color,
-                                piece: self.piece_type,
-                            });
-                        }
-                    }
-                }
-
                 // check a single move
                 if let Ok(Some(square)) = match self.color {
-                    Color::White => self.position.up(1).map(|i| board.square(&i)),
-                    Color::Black => self.position.down(1).map(|i| board.square(&i)),
+                    Color::White => self.position.up(1).map(|i| board.square(i)),
+                    Color::Black => self.position.down(1).map(|i| board.square(i)),
                 } {
                     if square.is_empty() {
                         moves.push(Move {
@@ -116,6 +90,27 @@ impl Piece {
                             color: self.color,
                             piece: self.piece_type,
                         });
+
+                        // check a double move (only if single move available)
+                        if match self.color {
+                            Color::White => self.position.rank == 2,
+                            Color::Black => self.position.rank == 7,
+                        } {
+                            if let Ok(Some(square)) = match self.color {
+                                Color::White => self.position.up(2).map(|i| board.square(i)),
+                                Color::Black => self.position.down(2).map(|i| board.square(i)),
+                            } {
+                                if square.is_empty() {
+                                    moves.push(Move {
+                                        from: self.position,
+                                        to: *square.get_position(),
+                                        modifiers: vec![MoveModifier::PawnDoubleMove],
+                                        color: self.color,
+                                        piece: self.piece_type,
+                                    });
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -124,11 +119,11 @@ impl Piece {
                     Color::White => self
                         .position
                         .up(1)
-                        .map(|i| i.right(1).map(|j| board.square(&j))),
+                        .map(|i| i.right(1).map(|j| board.square(j))),
                     Color::Black => self
                         .position
                         .down(1)
-                        .map(|i| i.right(1).map(|j| board.square(&j))),
+                        .map(|i| i.right(1).map(|j| board.square(j))),
                 } {
                     if let Some(piece) = square.get_piece() {
                         if piece.get_color() != self.get_color() {
@@ -148,11 +143,11 @@ impl Piece {
                     Color::White => self
                         .position
                         .up(1)
-                        .map(|i| i.left(1).map(|j| board.square(&j))),
+                        .map(|i| i.left(1).map(|j| board.square(j))),
                     Color::Black => self
                         .position
                         .down(1)
-                        .map(|i| i.left(1).map(|j| board.square(&j))),
+                        .map(|i| i.left(1).map(|j| board.square(j))),
                 } {
                     if let Some(piece) = square.get_piece() {
                         if piece.get_color() != self.get_color() {
@@ -167,53 +162,11 @@ impl Piece {
                     }
                 }
 
-                // // check en-passant exists to the left
-                // if let Ok(Some(Some(ep_piece))) = self
-                //     .position
-                //     .left(1)
-                //     .map(|i| board.square(&i).map(|j| j.get_piece()))
-                // {
-                //     if ep_piece.get_color() != self.get_color()
-                //         && ep_piece.get_type() == PieceType::Pawn
-                //         && ep_piece.can_en_passant
-                //     {
-                //         moves.push(Move::new(
-                //             self.position.clone(),
-                //             match self.get_color() {
-                //                 Color::White => ep_piece.get_position().clone().up_loop(1),
-                //                 Color::Black => ep_piece.get_position().clone().down_loop(1),
-                //             },
-                //             vec![MoveModifier::EnPassant],
-                //         ));
-                //     }
-                // }
-
-                // // check en-passant exists to the right
-                // if let Ok(Some(Some(ep_piece))) = self
-                //     .position
-                //     .right(1)
-                //     .map(|i| board.square(&i).map(|j| j.get_piece()))
-                // {
-                //     if ep_piece.get_color() != self.get_color()
-                //         && ep_piece.get_type() == PieceType::Pawn
-                //         && ep_piece.can_en_passant
-                //     {
-                //         moves.push(Move::new(
-                //             self.position.clone(),
-                //             match self.get_color() {
-                //                 Color::White => ep_piece.get_position().clone().up_loop(1),
-                //                 Color::Black => ep_piece.get_position().clone().down_loop(1),
-                //             },
-                //             vec![MoveModifier::EnPassant],
-                //         ));
-                //     }
-                // }
-
                 for m in moves.iter_mut() {
                     if m.to.rank == 8 && self.color == Color::White
                         || m.to.rank == 1 && self.color == Color::Black
                     {
-                        m.modifiers.push(MoveModifier::PromotionUnknown);
+                        m.modifiers.push(MoveModifier::PromotionUnknown(self.color));
                     }
                 }
 
@@ -237,7 +190,7 @@ impl Piece {
                     let mut capture = false;
                     let mut keep = true;
 
-                    if let Some(Some(piece)) = board.square(&position).map(|x| x.get_piece()) {
+                    if let Some(Some(piece)) = board.square(position).map(|x| x.get_piece()) {
                         if piece.get_color() != &self.color {
                             capture = true;
                         } else {
@@ -273,7 +226,7 @@ impl Piece {
                         _ => break,
                     };
 
-                    if let Some(square) = board.square(&position) {
+                    if let Some(square) = board.square(position) {
                         if let Some(piece) = square.get_piece() {
                             if piece.get_color() != &self.color {
                                 moves.push(Move {
@@ -307,7 +260,7 @@ impl Piece {
                         _ => break,
                     };
 
-                    if let Some(square) = board.square(&position) {
+                    if let Some(square) = board.square(position) {
                         if let Some(piece) = square.get_piece() {
                             if piece.get_color() != &self.color {
                                 moves.push(Move {
@@ -341,7 +294,7 @@ impl Piece {
                         _ => break,
                     };
 
-                    if let Some(square) = board.square(&position) {
+                    if let Some(square) = board.square(position) {
                         if let Some(piece) = square.get_piece() {
                             if piece.get_color() != &self.color {
                                 moves.push(Move {
@@ -375,7 +328,7 @@ impl Piece {
                         _ => break,
                     };
 
-                    if let Some(square) = board.square(&position) {
+                    if let Some(square) = board.square(position) {
                         if let Some(piece) = square.get_piece() {
                             if piece.get_color() != &self.color {
                                 moves.push(Move {
@@ -414,7 +367,7 @@ impl Piece {
                         Err(_) => break,
                     };
 
-                    if let Some(square) = board.square(&position) {
+                    if let Some(square) = board.square(position) {
                         if let Some(piece) = square.get_piece() {
                             if *piece.get_color() != self.color {
                                 moves.push(Move {
@@ -448,7 +401,7 @@ impl Piece {
                         Err(_) => break,
                     };
 
-                    if let Some(square) = board.square(&position) {
+                    if let Some(square) = board.square(position) {
                         if let Some(piece) = square.get_piece() {
                             if *piece.get_color() != self.color {
                                 moves.push(Move {
@@ -482,7 +435,7 @@ impl Piece {
                         Err(_) => break,
                     };
 
-                    if let Some(square) = board.square(&position) {
+                    if let Some(square) = board.square(position) {
                         if let Some(piece) = square.get_piece() {
                             if *piece.get_color() != self.color {
                                 moves.push(Move {
@@ -516,7 +469,7 @@ impl Piece {
                         Err(_) => break,
                     };
 
-                    if let Some(square) = board.square(&position) {
+                    if let Some(square) = board.square(position) {
                         if let Some(piece) = square.get_piece() {
                             if *piece.get_color() != self.color {
                                 moves.push(Move {
@@ -579,7 +532,7 @@ impl Piece {
                     let mut capture = false;
                     let mut keep = true;
 
-                    if let Some(Some(piece)) = board.square(&position).map(|x| x.get_piece()) {
+                    if let Some(Some(piece)) = board.square(position).map(|x| x.get_piece()) {
                         if piece.get_color() != &self.color {
                             capture = true;
                         } else {
@@ -629,5 +582,30 @@ impl Piece {
                 PieceType::King => 'k',
             },
         }
+    }
+}
+
+impl Display for Piece {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let c = match self.color {
+            Color::White => match self.piece_type {
+                PieceType::Bishop => '♗',
+                PieceType::King => '♔',
+                PieceType::Knight => '♘',
+                PieceType::Pawn => '♙',
+                PieceType::Queen => '♕',
+                PieceType::Rook => '♖',
+            },
+            Color::Black => match self.piece_type {
+                PieceType::Bishop => '♝',
+                PieceType::King => '♚',
+                PieceType::Knight => '♞',
+                PieceType::Pawn => '♟',
+                PieceType::Queen => '♛',
+                PieceType::Rook => '♜',
+            },
+        };
+
+        write!(f, "{c}")
     }
 }

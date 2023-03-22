@@ -4,14 +4,14 @@ use crate::core::{color::Color, piece::PieceType, position::Position};
 pub enum MoveModifier {
     Capture,
     EnPassant,
-    PromotionUnknown,
+    PromotionUnknown(Color),
     Promotion(PieceType),
     CastleKingSide,
     CastleQueenSide,
     PawnDoubleMove,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Move {
     pub from: Position,
     pub to: Position,
