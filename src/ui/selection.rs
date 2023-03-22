@@ -1,59 +1,62 @@
-use crate::{parts::position::Position, types::r#move::Move};
+use crate::core::position::Position;
 
-#[derive(Clone, Debug)]
-pub enum SelectionType {
-    Hover,
-    Selected,
-    Available,
-}
+#[derive(Debug, Clone, PartialEq)]
+pub enum Selection {
+    /// hovered square
+    SelectPiece(Position),
 
-#[derive(Clone)]
-pub enum SelectionMode {
-    SelectPiece,
-    SelectMove,
-}
-
-impl Default for SelectionType {
-    fn default() -> Self {
-        Self::Hover
-    }
-}
-
-#[derive(Clone, Default)]
-pub struct Selection {
-    pub hover: Position,
-    pub selected: Option<Position>,
-    pub avaliable: Vec<Move>,
+    /// hovered square, selected piece, available moves
+    SelectMove(Position, Position, Vec<Position>),
 }
 
 impl Selection {
-    pub fn has(&self, pos: &Position) -> Option<SelectionType> {
-        if self.hover == *pos {
-            Some(SelectionType::Hover)
-        } else if let Some(selected) = &self.selected {
-            if selected == pos {
-                Some(SelectionType::Selected)
-            } else if self
-                .avaliable
-                .iter()
-                .map(|x| x.clone().to)
-                .collect::<Vec<_>>()
-                .contains(pos)
-            {
-                Some(SelectionType::Available)
-            } else {
-                None
+    pub fn up(&mut self) {
+        match self {
+            Selection::SelectPiece(pos) => {
+                *pos = pos.up(1).unwrap_or(*pos);
             }
-        } else if self
-            .avaliable
-            .iter()
-            .map(|x| x.clone().to)
-            .collect::<Vec<_>>()
-            .contains(pos)
-        {
-            Some(SelectionType::Available)
-        } else {
-            None
+            Selection::SelectMove(pos, _, _) => {
+                *pos = pos.up(1).unwrap_or(*pos);
+            }
         }
+    }
+
+    pub fn down(&mut self) {
+        match self {
+            Selection::SelectPiece(pos) => {
+                *pos = pos.down(1).unwrap_or(*pos);
+            }
+            Selection::SelectMove(pos, _, _) => {
+                *pos = pos.down(1).unwrap_or(*pos);
+            }
+        }
+    }
+
+    pub fn left(&mut self) {
+        match self {
+            Selection::SelectPiece(pos) => {
+                *pos = pos.left(1).unwrap_or(*pos);
+            }
+            Selection::SelectMove(pos, _, _) => {
+                *pos = pos.left(1).unwrap_or(*pos);
+            }
+        }
+    }
+
+    pub fn right(&mut self) {
+        match self {
+            Selection::SelectPiece(pos) => {
+                *pos = pos.right(1).unwrap_or(*pos);
+            }
+            Selection::SelectMove(pos, _, _) => {
+                *pos = pos.right(1).unwrap_or(*pos);
+            }
+        }
+    }
+}
+
+impl Default for Selection {
+    fn default() -> Self {
+        Self::SelectPiece(Position::default())
     }
 }
