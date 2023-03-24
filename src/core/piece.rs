@@ -130,7 +130,7 @@ impl Piece {
                             moves.push(Move {
                                 from: self.position,
                                 to: *square.get_position(),
-                                modifiers: vec![],
+                                modifiers: vec![MoveModifier::Capture],
                                 color: self.color,
                                 piece: self.piece_type,
                             });
@@ -154,7 +154,7 @@ impl Piece {
                             moves.push(Move {
                                 from: self.position,
                                 to: *square.get_position(),
-                                modifiers: vec![],
+                                modifiers: vec![MoveModifier::Capture],
                                 color: self.color,
                                 piece: self.piece_type,
                             });

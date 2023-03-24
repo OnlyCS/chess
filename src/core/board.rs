@@ -348,23 +348,40 @@ impl Board {
             working_board.moves_unchecked_regen()
         };
 
+        // fixes a bug where the black king is in check but a valid move is to put the white king in check
+        let check_first = self.turn.opposite() == Color::White;
+
+        let (moves1, moves2) = if check_first {
+            (&moves_for_white, &moves_for_black)
+        } else {
+            (&moves_for_black, &moves_for_white)
+        };
+
         #[allow(clippy::unwrap_used)]
-        for mv in moves_for_black {
+        for mv in moves1 {
             if mv.modifiers.contains(&MoveModifier::Capture) {
                 if let Some(pc) = self.square(mv.to).unwrap().get_piece() {
                     if pc.get_type() == PieceType::King {
-                        return Some(Color::White);
+                        return Some(if check_first {
+                            Color::Black
+                        } else {
+                            Color::White
+                        });
                     }
                 }
             }
         }
 
         #[allow(clippy::unwrap_used)]
-        for mv in moves_for_white {
+        for mv in moves2 {
             if mv.modifiers.contains(&MoveModifier::Capture) {
                 if let Some(pc) = self.square(mv.to).unwrap().get_piece() {
                     if pc.get_type() == PieceType::King {
-                        return Some(Color::Black);
+                        return Some(if check_first {
+                            Color::White
+                        } else {
+                            Color::Black
+                        });
                     }
                 }
             }
