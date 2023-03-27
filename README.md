@@ -21,9 +21,16 @@ Now, in rust. What a beauty.
 - [] the ai part (will train on pleco)
 - [] maybe networking in the future
 
-## remember you need a server running stockfish (like tcpip)
+## remember you need a server running stockfish (tcpip)
 
 on linux:
 ```bash
-socat tcp-listen:8888,reuseaddr exec:/path/to/stockfish
+socat tcp-listen:1234,reuseaddr exec:/path/to/stockfish
 ```
+
+on windows (gotta install winsocat/idk if this works, chatgpt said so):
+```powershell
+winsocat tcp-listen:1234,reuseaddr exec:/path/to/stockfish
+```
+
+if the cli changes imma cry
