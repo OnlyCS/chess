@@ -37,10 +37,11 @@ pub fn extract() -> Result<()> {
     Ok(())
 }
 
-pub fn rw(cmd: &str) -> Result<String> {
+pub fn eval(fen: String) -> Result<String> {
     let mut stream = TcpStream::connect("localhost:1234")?;
 
-    stream.write_all(format!("{}\n", cmd).as_bytes())?;
+    stream.write_all(format!("position fen {}\n", fen).as_bytes())?;
+    stream.write_all("eval\n".as_bytes())?;
 
     let mut reader = BufReader::new(stream.try_clone()?);
 
@@ -60,7 +61,7 @@ pub fn rw(cmd: &str) -> Result<String> {
             }
         }
 
-        if buffer.ends_with("uciok\n") {
+        if buffer.ends_with("with scaled NNUE") {
             break;
         }
     }
