@@ -4,7 +4,7 @@ use anyhow::{bail, Result};
 
 use crate::{
     core::{color::Color, piece::Piece, piece::PieceType, position::Position, square::Square},
-    utils::to_vec::ToVec,
+    utils::traits::ToVec,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

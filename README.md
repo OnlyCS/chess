@@ -20,3 +20,10 @@ Now, in rust. What a beauty.
 - [] conversion to uci and other standard chess protocols
 - [] the ai part (will train on pleco)
 - [] maybe networking in the future
+
+## remember you need a server running stockfish (like tcpip)
+
+on linux:
+```bash
+socat tcp-listen:8888,reuseaddr exec:/path/to/stockfish
+```

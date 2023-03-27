@@ -11,7 +11,7 @@ use crate::{
         position::Position,
         square::Square,
     },
-    utils::{counter::Counter, to_vec::ToVec},
+    utils::{counter::Counter, traits::ToVec},
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]

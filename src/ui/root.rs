@@ -17,7 +17,7 @@ use crate::{
         position::Position,
     },
     ui::{parts::BoardComponent, selection::Selection},
-    utils::{string_builder::StringBuilder, to_vec::ToVec},
+    utils::{string_builder::StringBuilder, traits::ToVec},
 };
 
 #[component(Root)]
