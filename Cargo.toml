@@ -6,8 +6,5 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.69"
 crossterm = "0.25.0"
-futures = "0.3.27"
 intuitive = {version = "0.6.2", features = ["experimental"]}
-reqwest = { version = "0.11.16", features = ["blocking"] }
 rustneat = "0.2.1"
-zip = "0.6.4"

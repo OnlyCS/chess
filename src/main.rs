@@ -2,10 +2,8 @@
 #![allow(clippy::needless_update, unused_assignments)]
 
 extern crate anyhow;
-extern crate futures;
 extern crate intuitive;
 extern crate rustneat;
-extern crate zip;
 
 pub mod ai;
 pub mod core;
@@ -15,23 +13,6 @@ pub mod utils;
 use ai::stockfish::{self};
 use anyhow::Result;
 
-// async fn run() -> Result<()> {
-//     // let mut t = Terminal::new(Root::new()).await?;
-//     // t.run().await?;
-
-//     // Ok(())
-
-//     // download stockfish
-//     stockfish::download()?;
-//     stockfish::extract()?;
-
-//     println!("Stockfish downloaded and extracted successfully.");
-
-//     let mut process = StockfishProcess::new()?;
-
-//     Ok(())
-// }
-
 fn main() -> Result<()> {
     // run async main using only futures
     // futures::executor::block_on(run())?;
@@ -39,7 +20,7 @@ fn main() -> Result<()> {
     let str = stockfish::eval("5B2/N2p2p1/2p5/2P1rP1R/3p1k1K/7B/4rP1P/8 w - - 0 1".to_string())?;
 
     // get last line
-    let mut lines = str.lines();
+    let lines = str.lines();
     let last_line = lines.last().unwrap();
 
     // last line looks like this:
