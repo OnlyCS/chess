@@ -509,11 +509,20 @@ impl Board {
         let mut ranks = vec![Vec::with_capacity(8); 8];
         let squares: Vec<&Square> = self.to_vec();
 
-        for square in squares {
-            let rank = square.get_position().rank as usize;
-            let file = square.get_position().file as usize;
+        for rank in ranks.iter_mut() {
+            for _ in 0..8 {
+                rank.push('\0');
+            }
+        }
 
-            ranks[rank][file] = square.fen();
+        for square in squares {
+            let rankn = square.get_position().rank as usize;
+            let filen = square.get_position().file as usize;
+
+            let ranki = 8 - rankn;
+            let filei = filen - 1;
+
+            ranks[ranki][filei] = square.fen();
         }
 
         let mut fen = String::new();
@@ -540,6 +549,9 @@ impl Board {
 
             fen.push('/');
         }
+
+        // remove the last '/'
+        fen.pop();
 
         let castle_str = {
             let mut castle_str = String::new();
@@ -667,37 +679,46 @@ impl Board {
 
         let mut rng = rand::thread_rng();
 
-        let num_pcs = rng.gen_range(8..=20);
+        let num_pcs = rng.gen_range(4..=20);
 
         // use rng to gen two numbers 1-8 (rank, file)
 
         let king0pos = (rng.gen_range(1..=8), rng.gen_range(1..=8));
-        let king1pos;
+        let king1pos: (i32, i32);
 
         loop {
-            let k1testpos = (rng.gen_range(1..=8), rng.gen_range(1..=8));
+            let k1testpos: (i32, i32) = (rng.gen_range(1..=8), rng.gen_range(1..=8));
 
-            if k1testpos != king0pos {
+            // pos must be two ranks away from king0pos
+            if (k1testpos.0 - king0pos.0).abs() >= 2 && (k1testpos.1 - king0pos.1).abs() >= 2 {
                 king1pos = k1testpos;
                 break;
             }
         }
 
-        kings
-            .index_mut(0)
-            .set_position(Position::new(FileLetter::from(king0pos.1), king0pos.0));
+        kings.index_mut(0).set_position(Position::new(
+            FileLetter::from(king0pos.1 as u8),
+            king0pos.0 as u8,
+        ));
 
-        kings
-            .index_mut(1)
-            .set_position(Position::new(FileLetter::from(king1pos.1), king1pos.0));
+        kings.index_mut(1).set_position(Position::new(
+            FileLetter::from(king1pos.1 as u8),
+            king1pos.0 as u8,
+        ));
 
         board
-            .square_mut(Position::new(FileLetter::from(king0pos.1), king0pos.0))
+            .square_mut(Position::new(
+                FileLetter::from(king0pos.1 as u8),
+                king0pos.0 as u8,
+            ))
             .context("Failed to set king0pos")?
             .set_piece(kings.index(0).clone());
 
         board
-            .square_mut(Position::new(FileLetter::from(king1pos.1), king1pos.0))
+            .square_mut(Position::new(
+                FileLetter::from(king1pos.1 as u8),
+                king1pos.0 as u8,
+            ))
             .context("Failed to set king1pos")?
             .set_piece(kings.index(1).clone());
 
@@ -728,6 +749,16 @@ impl Board {
                     .context("Failed to get position")?
                     .set_piece(pc);
             }
+        }
+
+        board.black_castle.kingside = false;
+        board.black_castle.queenside = false;
+
+        board.white_castle.kingside = false;
+        board.white_castle.queenside = false;
+
+        if board.is_check().is_some() {
+            return Self::random();
         }
 
         Ok(board)
