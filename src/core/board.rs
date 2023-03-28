@@ -1,4 +1,7 @@
-use anyhow::{bail, Context, Result};
+use std::ops::{Index, IndexMut};
+
+use anyhow::{bail, ensure, Context, Result};
+use rand::{seq::SliceRandom, Rng};
 
 use crate::{
     core::{
@@ -640,9 +643,94 @@ impl Board {
             }
         }
 
-        assert!(success, "No pawn to promote");
+        ensure!(success, "No pawn to promote");
 
         Ok(())
+    }
+
+    pub fn random() -> Result<Self> {
+        let mut board = Self::default();
+
+        // for every board.square
+        let squares: Vec<&mut Square> = board.to_vec_mut();
+        let mut pcs = vec![];
+
+        for square in squares {
+            if let Some(pc) = square.get_piece_owned() {
+                pcs.push(pc);
+            }
+        }
+
+        let mut kings = pcs
+            .drain_filter(|pc| pc.get_type() == PieceType::King)
+            .collect::<Vec<_>>();
+
+        let mut rng = rand::thread_rng();
+
+        let num_pcs = rng.gen_range(8..=20);
+
+        // use rng to gen two numbers 1-8 (rank, file)
+
+        let king0pos = (rng.gen_range(1..=8), rng.gen_range(1..=8));
+        let king1pos;
+
+        loop {
+            let k1testpos = (rng.gen_range(1..=8), rng.gen_range(1..=8));
+
+            if k1testpos != king0pos {
+                king1pos = k1testpos;
+                break;
+            }
+        }
+
+        kings
+            .index_mut(0)
+            .set_position(Position::new(FileLetter::from(king0pos.1), king0pos.0));
+
+        kings
+            .index_mut(1)
+            .set_position(Position::new(FileLetter::from(king1pos.1), king1pos.0));
+
+        board
+            .square_mut(Position::new(FileLetter::from(king0pos.1), king0pos.0))
+            .context("Failed to set king0pos")?
+            .set_piece(kings.index(0).clone());
+
+        board
+            .square_mut(Position::new(FileLetter::from(king1pos.1), king1pos.0))
+            .context("Failed to set king1pos")?
+            .set_piece(kings.index(1).clone());
+
+        for _ in 0..num_pcs {
+            let pos;
+
+            loop {
+                let testpos =
+                    Position::new(FileLetter::from(rng.gen_range(1..=8)), rng.gen_range(1..=8));
+
+                if board
+                    .square(testpos)
+                    .map(|s| s.get_piece().is_none())
+                    .unwrap_or(false)
+                {
+                    pos = testpos;
+                    break;
+                }
+            }
+
+            let pc = pcs.choose(&mut rng);
+
+            if let Some(pc) = pc {
+                let mut pc = pc.clone();
+                pc.set_position(pos);
+                board
+                    .square_mut(pos)
+                    .context("Failed to get position")?
+                    .set_piece(pc);
+            }
+        }
+
+        Ok(board)
     }
 }
 
