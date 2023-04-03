@@ -761,7 +761,89 @@ impl Board {
             return Self::random();
         }
 
+        board.turn = match rng.gen_range(0..=1) {
+            0 => Color::White,
+            1 => Color::Black,
+            _ => unreachable!(),
+        };
+
         Ok(board)
+    }
+
+    pub fn dataset(&self) -> Vec<u8> {
+        let mut ranks: Vec<Vec<u8>> = vec![Vec::with_capacity(8); 8];
+        let squares: Vec<&Square> = self.to_vec();
+
+        for rank in ranks.iter_mut() {
+            for _ in 0..8 {
+                rank.push(0);
+            }
+        }
+
+        for square in squares {
+            let rankn = square.get_position().rank as usize;
+            let filen = square.get_position().file as usize;
+
+            let ranki = 8 - rankn;
+            let filei = filen - 1;
+
+            ranks[ranki][filei] = match square.get_piece() {
+                Some(pc) => match *pc.get_color() {
+                    Color::White => match pc.get_type() {
+                        PieceType::Pawn => 1,
+                        PieceType::Knight => 2,
+                        PieceType::Bishop => 3,
+                        PieceType::Rook => 4,
+                        PieceType::Queen => 5,
+                        PieceType::King => 6,
+                    },
+                    Color::Black => match pc.get_type() {
+                        PieceType::Pawn => 7,
+                        PieceType::Knight => 8,
+                        PieceType::Bishop => 9,
+                        PieceType::Rook => 10,
+                        PieceType::Queen => 11,
+                        PieceType::King => 12,
+                    },
+                },
+                None => 0,
+            };
+        }
+
+        let mut dataset = vec![];
+
+        for rank in ranks {
+            for p in rank {
+                dataset.push(p);
+            }
+        }
+
+        dataset.push(match self.turn {
+            Color::White => 1,
+            Color::Black => 2,
+        });
+
+        dataset.push(match self.white_castle.kingside {
+            true => 1,
+            false => 0,
+        });
+
+        dataset.push(match self.white_castle.queenside {
+            true => 1,
+            false => 0,
+        });
+
+        dataset.push(match self.black_castle.kingside {
+            true => 1,
+            false => 0,
+        });
+
+        dataset.push(match self.black_castle.queenside {
+            true => 1,
+            false => 0,
+        });
+
+        dataset
     }
 }
 
