@@ -1,4 +1,7 @@
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    str::FromStr,
+};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Color {
@@ -52,6 +55,18 @@ impl Display for Color {
         match self {
             Color::White => write!(f, "White"),
             Color::Black => write!(f, "Black"),
+        }
+    }
+}
+
+impl FromStr for Color {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "w" => Ok(Color::White),
+            "b" => Ok(Color::Black),
+            _ => Err(anyhow::anyhow!("Invalid Color")),
         }
     }
 }

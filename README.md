@@ -1,27 +1,19 @@
 # chess-ai
 
-Now, in rust. What a beauty.
+This was going to be a coding adventure into making neural networks and stuff but I decided not
+to due to lack of intrest (I want to move on to other things). This was still a fun adventure
+into the world of Chess, Rust, and really, *really* bad tui libraries.
 
-`src/ui` contains everything used in the terminal-user-interface
-
-`src/game` contains a wrapper for the board and turn management
-
-`src/parts` contains the board, and data wrappers for squares, files, and coordinates
-
-`src/types` is a synonym for the utils folder. It contains enums for the color, a `move` struct with a `from` and `to` position, ...etc.
-
-`src/pieces` contains implementations for all of the pieces, including move generation.
+This will probably be the basis for my electronic chess board project.
 
 ## roadmap
 
 - [x] implement all pieces
 - [x] implement move generation
 - [x] full tui
-- [] conversion to uci and other standard chess protocols
-- [] the ai part (will train on pleco)
-- [] maybe networking in the future
+- [] maybe networking/server
 
-## remember you need a server running stockfish (tcpip)
+## stockfish server setup
 
 on linux:
 ```bash
@@ -32,5 +24,3 @@ on windows (gotta install winsocat/idk if this works, chatgpt said so):
 ```powershell
 winsocat tcp-listen:1234,reuseaddr exec:/path/to/stockfish
 ```
-
-if the cli changes imma cry
