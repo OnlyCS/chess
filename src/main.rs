@@ -2,7 +2,6 @@
 #![allow(clippy::needless_update, clippy::unnecessary_struct_initialization)]
 #![feature(drain_filter, file_create_new)]
 
-use ai::stockfish::{self, eval};
 use clap::Parser;
 use cli::args::Cli;
 
@@ -27,31 +26,8 @@ fn main() -> Result<()> {
 
     match &args.command {
         cli::args::Command::Play => Terminal::new(Root::new())?.run()?,
-        cli::args::Command::Eval(args) => {
-            let fen = &args.fen;
-
-            println!("{}", stockfish::eval(fen.clone())?);
-        }
-        cli::args::Command::EvalAfterMove(_) => todo!(),
-        cli::args::Command::GenRandom => {
-            let mut output = String::new();
-
-            let random_board = Board::random()?;
-
-            output.push_str(&random_board.fen());
-            output.push(',');
-            output.push_str(
-                &random_board
-                    .dataset()
-                    .iter()
-                    .map(|x| x.to_string())
-                    .collect::<Vec<_>>()
-                    .join(""),
-            );
-            output.push(',');
-            output.push_str(&eval(random_board.fen())?.to_string());
-
-            println!("{output}");
+        cli::args::Command::PlayRandom => {
+            Terminal::new(Root::with_board(Board::random()?))?.run()?
         }
     }
 

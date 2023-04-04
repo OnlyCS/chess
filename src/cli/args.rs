@@ -1,4 +1,4 @@
-use clap::{Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(author = "OnlyCS", version, about = "Chess GUI and AI")]
@@ -10,18 +10,5 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Command {
     Play,
-    Eval(EvalArgs),
-    EvalAfterMove(EvalAfterMoveArgs),
-    GenRandom,
-}
-
-#[derive(Args)]
-pub struct EvalArgs {
-    pub fen: String,
-}
-
-#[derive(Args)]
-pub struct EvalAfterMoveArgs {
-    pub fen: String,
-    pub r#move: String,
+    PlayRandom,
 }

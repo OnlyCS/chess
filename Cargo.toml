@@ -10,3 +10,7 @@ crossterm = "0.25.0"
 intuitive = {version = "0.6.2", features = ["experimental"]}
 rand = "0.8.5"
 syn = "2.0.13"
+
+[[bin]]
+name = "chess-ai"
+path = "src/main.rs"
