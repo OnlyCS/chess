@@ -15,7 +15,7 @@ use intuitive::{
 
 use crate::{
     core::{
-        board::{Board, GameEndedReason},
+        board::{Board, Event, GameEndedReason},
         color::Color,
         file::File,
         piece::PieceType,
@@ -201,6 +201,8 @@ impl Component for Root {
                                     return;
                                 }
 
+                                board.event_emitter.emit(Event::Move, selected_move.clone());
+
                                 selection.set(Selection::SelectPiece(hover_pos));
                                 error_message.mutate(|e| e.clear());
 
@@ -248,7 +250,7 @@ impl Component for Root {
         let (term_w, term_h) = size().unwrap();
 
         let min_term_w = 100;
-        let min_term_h = 26;
+        let min_term_h = 28;
         let size_ok = term_w >= min_term_w && term_h >= min_term_h;
 
         let flex = if size_ok {

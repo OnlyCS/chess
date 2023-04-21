@@ -1,13 +1,14 @@
 #![allow(clippy::panic)]
 
 use anyhow::{bail, Result};
+use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{color::Color, piece::Piece, piece::PieceType, position::Position, square::Square},
     utils::traits::ToVec,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FileLetter {
     A = 1,
     B = 2,

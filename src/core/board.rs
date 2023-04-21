@@ -1,7 +1,11 @@
-use std::ops::{Index, IndexMut};
+use std::{
+    ops::{Index, IndexMut},
+    time::Duration,
+};
 
 use anyhow::{bail, ensure, Context, Result};
 use rand::{seq::SliceRandom, Rng};
+use serialport::SerialPortType;
 
 use crate::{
     core::{
@@ -14,7 +18,7 @@ use crate::{
         position::Position,
         square::Square,
     },
-    utils::{counter::Counter, traits::ToVec},
+    utils::{counter::Counter, event_emitter::EventEmitter, traits::ToVec},
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -24,7 +28,12 @@ pub enum GameEndedReason {
     Stalemate(Color),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
+pub enum Event {
+    Move,
+}
+
+#[derive(Clone)]
 pub struct Board {
     files: Vec<File>,
     ep_target: Option<Position>,
@@ -34,10 +43,59 @@ pub struct Board {
     turn: Color,
     white_castle: CastleData,
     black_castle: CastleData,
+    pub event_emitter: EventEmitter<Event>,
 }
 
 impl Board {
-    pub fn new() -> Self {
+    pub fn new(serial: bool) -> Self {
+        let mut emitter = EventEmitter::default();
+
+        if serial {
+            emitter.on(Event::Move, |arg: Move| {
+                let ports = serialport::available_ports().expect("No ports found");
+                let mut port_name = Default::default();
+
+                for p in ports {
+                    if let SerialPortType::UsbPort(usb) = p.port_type {
+                        if let Some(name) = usb.product {
+                            if name.to_lowercase().contains("uno") {
+                                port_name = p.port_name;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if port_name == String::default() {
+                    panic!("Failed to find Arduino Uno");
+                }
+
+                let mut port = serialport::new(port_name, 9600)
+                    .timeout(Duration::from_secs(5))
+                    .open()
+                    .expect("Failed to open Arduino Uno");
+
+                let for_arduino = arg.to_ard();
+                let output = for_arduino.as_bytes();
+
+                port.write_all(output)
+                    .expect("Failed to write to Arduino Uno");
+
+                let mut input = Default::default();
+
+                port.read_to_string(&mut input)
+                    .expect("Failed to read Ok from Arduino Uno");
+
+                assert!(
+                    input == "ok",
+                    "Arduino Uno failed to respond with Ok, instead responded with {}",
+                    input
+                );
+
+                drop(port);
+            });
+        }
+
         let mut board = Self {
             files: Vec::new(),
             ep_target: None,
@@ -55,6 +113,7 @@ impl Board {
                 kingside: true,
                 color: Color::Black,
             },
+            event_emitter: emitter,
         };
 
         for letter in FileLetter::vec_all() {
@@ -869,6 +928,6 @@ impl ToVec<File> for Board {
 
 impl Default for Board {
     fn default() -> Self {
-        Self::new()
+        Self::new(false)
     }
 }
