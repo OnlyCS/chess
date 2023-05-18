@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 use crate::core::{color::Color, piece::PieceType, position::Position};
 
-#[derive(PartialEq, Clone, Debug, Copy, Eq)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug, Copy, Eq)]
 pub enum MoveModifier {
     Capture,
     EnPassant,
@@ -11,7 +13,7 @@ pub enum MoveModifier {
     PawnDoubleMove,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Move {
     pub from: Position,
     pub to: Position,
@@ -29,5 +31,43 @@ impl Default for Move {
             piece: PieceType::Pawn,
             color: Color::White,
         }
+    }
+}
+
+impl Move {
+    pub fn to_ard(&self) -> String {
+        let fromf: u8 = self.from.file.into();
+        let fromr = self.from.rank;
+        let tof: u8 = self.to.file.into();
+        let tor = self.to.rank;
+
+        let istake = self
+            .modifiers
+            .iter()
+            .filter(|m| {
+                let modifier = **m;
+
+                matches!(
+                    modifier,
+                    MoveModifier::Capture
+                        | MoveModifier::Promotion(_)
+                        | MoveModifier::PromotionUnknown(_)
+                )
+            })
+            .count()
+            > 0;
+
+        let castletype = match self.modifiers[0] {
+            MoveModifier::CastleKingSide => 1,
+            MoveModifier::CastleQueenSide => 2,
+            _ => 0,
+        };
+
+        let is_ep = self.modifiers.contains(&MoveModifier::EnPassant);
+
+        format!(
+            "{}{}{}{}{}{}{}",
+            fromf, fromr, tof, tor, istake as u8, castletype, is_ep
+        )
     }
 }

@@ -3,7 +3,9 @@ use std::{
     str::FromStr,
 };
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Color {
     Black,
     White,

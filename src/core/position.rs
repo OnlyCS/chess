@@ -1,8 +1,9 @@
 use anyhow::{ensure, Result};
+use serde::{Deserialize, Serialize};
 
 use super::file::FileLetter;
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Copy)]
 pub struct Position {
     pub file: FileLetter,
     pub rank: u8,

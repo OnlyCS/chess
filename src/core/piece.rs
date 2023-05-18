@@ -1,10 +1,12 @@
 use std::fmt::{Display, Formatter};
 
+use serde::{Deserialize, Serialize};
+
 use crate::core::{
     board::Board, color::Color, piece_move::Move, piece_move::MoveModifier, position::Position,
 };
 
-#[derive(Clone, Debug, Copy, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, Hash)]
 pub enum PieceType {
     Pawn,
     Knight,
