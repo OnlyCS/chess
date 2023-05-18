@@ -1,5 +1,4 @@
 use std::{
-    hash::Hasher,
     ops::{Index, IndexMut},
     time::Duration,
 };

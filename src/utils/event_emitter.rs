@@ -41,8 +41,8 @@ where
         if let Some(listeners) = self.listeners.get_mut(&event) {
             let bytes: Vec<u8> = bincode::serialize(&value).unwrap();
 
-            let mut listeners_to_remove: Vec<usize> = Vec::new();
-            for (index, listener) in listeners.iter_mut().enumerate() {
+            let listeners_to_remove: Vec<usize> = Vec::new();
+            for listener in listeners.iter_mut() {
                 let cloned_bytes = bytes.clone();
                 let callback = Arc::clone(&listener.callback);
 
@@ -60,14 +60,18 @@ where
         return callback_handlers;
     }
 
-    pub fn remove_listener(&mut self, id_to_delete: &str) -> Option<String> {
+    pub fn remove_listener<S>(&mut self, id_to_delete: S) -> Option<String>
+    where
+        S: Into<String>,
+    {
+        let id = id_to_delete.into();
         for (_, event_listeners) in self.listeners.iter_mut() {
             if let Some(index) = event_listeners
                 .iter()
-                .position(|listener| listener.id == id_to_delete)
+                .position(|listener| listener.id == id)
             {
                 event_listeners.remove(index);
-                return Some(id_to_delete.to_string());
+                return Some(id);
             }
         }
 
