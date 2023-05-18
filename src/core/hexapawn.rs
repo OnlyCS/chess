@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use anyhow::{bail, Result};
 use serialport::SerialPortType;
 
 use crate::{
@@ -172,6 +173,10 @@ impl HexapawnBoard {
     }
 
     pub fn at(&self, x: usize, y: usize) -> Option<&HexPiece> {
+        if !(0..=2).contains(&x) || !(0..=2).contains(&y) {
+            return None;
+        }
+
         self.board[y][x].as_ref()
     }
 
@@ -187,9 +192,19 @@ impl HexapawnBoard {
         m
     }
 
-    pub fn make_move(&mut self, m: (usize, usize, usize, usize, bool)) {
+    pub fn make_move(&mut self, m: (usize, usize, usize, usize, bool)) -> Result<()> {
+        if !(0..=2).contains(&m.0)
+            || !(0..=2).contains(&m.1)
+            || !(0..=2).contains(&m.2)
+            || !(0..=2).contains(&m.3)
+        {
+            bail!("oob idiot")
+        }
+
         self.board[m.3][m.2] = self.board[m.1][m.0].clone();
         self.board[m.1][m.0] = None;
         self.board[m.3][m.2].as_mut().unwrap().make_move(m);
+
+        Ok(())
     }
 }
