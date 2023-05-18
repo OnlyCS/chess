@@ -1,4 +1,5 @@
 use std::{
+    hash::Hasher,
     ops::{Index, IndexMut},
     time::Duration,
 };
@@ -28,8 +29,9 @@ pub enum GameEndedReason {
     Stalemate(Color),
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Hash)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash, Default)]
 pub enum Event {
+    #[default]
     Move,
 }
 
