@@ -2,6 +2,7 @@ pub mod board;
 pub mod castle;
 pub mod color;
 pub mod file;
+pub mod hexapawn;
 pub mod piece;
 pub mod piece_move;
 pub mod position;
