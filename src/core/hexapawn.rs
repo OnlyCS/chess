@@ -208,3 +208,9 @@ impl HexapawnBoard {
         Ok(())
     }
 }
+
+impl Default for HexapawnBoard {
+    fn default() -> Self {
+        Self::new(false)
+    }
+}
