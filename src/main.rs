@@ -16,12 +16,12 @@ use anyhow::Result;
 use clap::Parser;
 use intuitive::terminal::Terminal;
 
-use crate::{cli::args::Cli, core::board::Board, ui::root::Root};
+use crate::{cli::args::Cli, core::hexapawn::HexapawnBoard, ui::hexapawn::Root};
 
 fn main() -> Result<()> {
     let args = Cli::parse();
 
-    Terminal::new(Root::with_board(Board::new(args.serial)))?.run()?;
+    Terminal::new(Root::with_board(HexapawnBoard::new(args.serial)))?.run()?;
 
     Ok(())
 }

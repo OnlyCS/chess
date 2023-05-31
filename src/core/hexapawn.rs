@@ -38,13 +38,16 @@ impl HexPiece {
                     moves.push((self.x, self.y, self.x + 1, self.y + 1, true));
                 }
 
-                if board
-                    .at(self.x - 1, self.y + 1)
-                    .map(|p| p.c == self.c.opposite())
-                    .filter(|x| *x)
-                    .is_some()
-                {
-                    moves.push((self.x, self.y, self.x - 1, self.y + 1, true));
+                // usize overflow protection
+                if self.x != 0 {
+                    if board
+                        .at(self.x - 1, self.y + 1)
+                        .map(|p| p.c == self.c.opposite())
+                        .filter(|x| *x)
+                        .is_some()
+                    {
+                        moves.push((self.x, self.y, self.x - 1, self.y + 1, true));
+                    }
                 }
 
                 moves
@@ -52,26 +55,32 @@ impl HexPiece {
             Color::White => {
                 let mut moves = vec![];
 
-                if board.at(self.x, self.y - 1).is_none() {
-                    moves.push((self.x, self.y, self.x, self.y - 1, false));
-                }
+                // usize overflow protection
+                if self.y != 0 {
+                    if board.at(self.x, self.y - 1).is_none() {
+                        moves.push((self.x, self.y, self.x, self.y - 1, false));
+                    }
 
-                if board
-                    .at(self.x + 1, self.y - 1)
-                    .map(|p| p.c == self.c.opposite())
-                    .filter(|x| *x)
-                    .is_some()
-                {
-                    moves.push((self.x, self.y, self.x + 1, self.y - 1, true));
-                }
+                    if board
+                        .at(self.x + 1, self.y - 1)
+                        .map(|p| p.c == self.c.opposite())
+                        .filter(|x| *x)
+                        .is_some()
+                    {
+                        moves.push((self.x, self.y, self.x + 1, self.y - 1, true));
+                    }
 
-                if board
-                    .at(self.x - 1, self.y - 1)
-                    .map(|p| p.c == self.c.opposite())
-                    .filter(|x| *x)
-                    .is_some()
-                {
-                    moves.push((self.x, self.y, self.x - 1, self.y - 1, true));
+                    // usize overflow protection
+                    if self.x != 0 {
+                        if board
+                            .at(self.x - 1, self.y - 1)
+                            .map(|p| p.c == self.c.opposite())
+                            .filter(|x| *x)
+                            .is_some()
+                        {
+                            moves.push((self.x, self.y, self.x - 1, self.y - 1, true));
+                        }
+                    }
                 }
 
                 moves
@@ -178,6 +187,37 @@ impl HexapawnBoard {
         }
 
         self.board[y][x].as_ref()
+    }
+
+    pub fn is_win(&self) -> Option<Color> {
+        if self
+            .get_moves()
+            .iter()
+            .filter(|(x1, y1, _, _, _)| self.at(*x1, *y1).unwrap().c == self.turn)
+            .count()
+            == 0
+        {
+            Some(self.turn.opposite())
+        } else if self
+            .board
+            .iter()
+            .flatten()
+            .filter(|x| x.is_some())
+            .map(|x| x.as_ref().unwrap())
+            .filter(|p| p.c == self.turn)
+            .filter(|p| {
+                p.y == match self.turn {
+                    Color::White => 0,
+                    Color::Black => 2,
+                }
+            })
+            .next()
+            .is_some()
+        {
+            Some(self.turn)
+        } else {
+            None
+        }
     }
 
     pub fn get_moves(&self) -> Vec<(usize, usize, usize, usize, bool)> {

@@ -60,6 +60,18 @@ impl Component for Root {
         let selection = use_state(|| Selection::Pc(0, 0));
         let error_message = use_state(StringBuilder::default);
         let helper_text = use_state(StringBuilder::default);
+        let freeze = use_state(|| false);
+
+        let hp = game.get();
+
+        if let Some(c) = hp.is_win() {
+            freeze.set(true);
+
+            helper_text.mutate(|b| {
+                b.clear();
+                b.pushln(format!("Winner: {}", c.to_string()));
+            })
+        }
 
         let key_handler = {
             let game = game.clone();
@@ -72,21 +84,40 @@ impl Component for Root {
 
                 match event.code {
                     Char('q') => event::quit(),
-                    Char('w') | Up => selection.mutate(|s| match s {
-                        Pc(x, y) => Pc(*x, (*y - 1).max(0).min(2)),
-                        Mv(a, b, x, y) => Mv(*a, *b, *x, (*y - 1).max(0).min(2)),
+                    Char('w') | Up => selection.mutate(|s| {
+                        *s = match s {
+                            Pc(x, y) => Pc(*x, ((*y as i32) - 1).max(0).min(2) as usize),
+                            Mv(a, b, x, y) => {
+                                Mv(*a, *b, *x, ((*y as i32) - 1).max(0).min(2) as usize)
+                            }
+                        }
                     }),
-                    Char('s') | Down => selection.mutate(|s| match s {
-                        Pc(x, y) => Pc(*x, (*y + 1).max(0).min(2)),
-                        Mv(a, b, x, y) => Mv(*a, *b, *x, (*y + 1).max(0).min(2)),
+                    Char('s') | Down => selection.mutate(|s| {
+                        *s = match s {
+                            Pc(x, y) => Pc(*x, (*y + 1).max(0).min(2)),
+                            Mv(a, b, x, y) => Mv(*a, *b, *x, (*y + 1).max(0).min(2)),
+                        }
                     }),
-                    Char('a') | Left => selection.mutate(|s| match s {
-                        Pc(x, y) => Pc((*x - 1).max(0).min(2), (*y).max(0).min(2)),
-                        Mv(a, b, x, y) => Mv(*a, *b, (*x - 1).max(0).min(2), (*y).max(0).min(2)),
+                    Char('a') | Left => selection.mutate(|s| {
+                        *s = match s {
+                            Pc(x, y) => {
+                                Pc(((*x as i32) - 1).max(0).min(2) as usize, (*y).max(0).min(2))
+                            }
+                            Mv(a, b, x, y) => Mv(
+                                *a,
+                                *b,
+                                ((*x as i32) - 1).max(0).min(2) as usize,
+                                (*y).max(0).min(2),
+                            ),
+                        }
                     }),
-                    Char('d') | Right => selection.mutate(|s| match s {
-                        Pc(x, y) => Pc((*x + 1).max(0).min(2), (*y).max(0).min(2)),
-                        Mv(a, b, x, y) => Mv(*a, *b, (*x + 1).max(0).min(2), (*y).max(0).min(2)),
+                    Char('d') | Right => selection.mutate(|s| {
+                        *s = match s {
+                            Pc(x, y) => Pc((*x + 1).max(0).min(2), (*y).max(0).min(2)),
+                            Mv(a, b, x, y) => {
+                                Mv(*a, *b, (*x + 1).max(0).min(2), (*y).max(0).min(2))
+                            }
+                        }
                     }),
                     Enter => match selection.get() {
                         Pc(x, y) => {
@@ -130,6 +161,22 @@ impl Component for Root {
                                         return;
                                     }
                                 };
+
+                                match hp.make_move(selected_move) {
+                                    Ok(_) => {}
+                                    Err(err) => {
+                                        error_message.mutate(|e| {
+                                            e.clear();
+                                            e.pushln(format!(
+                                                "Error: invalid move: {}",
+                                                err.to_string()
+                                            ));
+                                        });
+                                        return;
+                                    }
+                                }
+
+                                hp.turn.flip();
 
                                 hp.event_emitter.emit(Event::Move, selected_move.clone());
 
@@ -182,7 +229,11 @@ impl Component for Root {
         let tos = board
             .get_moves()
             .iter()
-            .map(|x| *(x.2, x.3))
+            .filter_map(|(x1, y1, x2, y2, _)| match selection.get() {
+                Pc(x, y) => None,
+                Mv(a, b, _, _) if a == *x1 && b == *y1 => Some((*x2, *y2)),
+                _ => None,
+            })
             .collect::<Vec<_>>();
 
         render! {
@@ -193,12 +244,153 @@ impl Component for Root {
                             VStack() {
                                 Section(border: match selection.get() {
                                     Pc(x, y) if x==0 && y==0 => Style::new(Some(IColor::Green), None, Modifier::empty()),
-                                    Mv(a,b,_,_) if a==0 && b==0 => Style::new(Some(IColor::Green), None, Modifier::empty()),
-                                    Mv(_,_,x,y) if x==0 && y==0 => Style::new(Some(IColor::Blue), None, Modifier::empty()),
-
-                                    _ => unimplemented!()
+                                    Mv(a,b,_,_) if a==0 && b==0 => Style::new(Some(IColor::Blue), None, Modifier::empty()),
+                                    Mv(_,_,x,y) if x==0 && y==0 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    _ if tos.contains(&(0,0)) => Style::new(Some(IColor::Yellow), None, Modifier::empty()),
+                                    _ => Style::default()
                                 }) {
-                                    Empty()
+                                    HStack() {
+                                        Empty()
+                                        Text(text: board.at(0, 0).map_or(' ', |p| match p.c {
+                                            Color::Black => '♝',
+                                            Color::White => '♗'
+                                        }))
+                                        Empty()
+                                    }
+                                }
+                                Section(border: match selection.get() {
+                                    Pc(x, y) if x==0 && y==1 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    Mv(a,b,_,_) if a==0 && b==1 => Style::new(Some(IColor::Blue), None, Modifier::empty()),
+                                    Mv(_,_,x,y) if x==0 && y==1 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    _ if tos.contains(&(0,1)) => Style::new(Some(IColor::Yellow), None, Modifier::empty()),
+                                    _ => Style::default()
+                                }) {
+                                    HStack() {
+                                        Empty()
+                                        Text(text: board.at(0, 1).map_or(' ', |p| match p.c {
+                                            Color::Black => '♝',
+                                            Color::White => '♗'
+                                        }))
+                                        Empty()
+                                    }
+                                }
+                                Section(border: match selection.get() {
+                                    Pc(x, y) if x==0 && y==2 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    Mv(a,b,_,_) if a==0 && b==2 => Style::new(Some(IColor::Blue), None, Modifier::empty()),
+                                    Mv(_,_,x,y) if x==0 && y==2 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    _ if tos.contains(&(0,2)) => Style::new(Some(IColor::Yellow), None, Modifier::empty()),
+                                    _ => Style::default()
+                                }) {
+                                    HStack() {
+                                        Empty()
+                                        Text(text: board.at(0, 2).map_or(' ', |p| match p.c {
+                                            Color::Black => '♝',
+                                            Color::White => '♗'
+                                        }))
+                                        Empty()
+                                    }
+                                }
+                            }
+
+                            VStack() {
+                                Section(border: match selection.get() {
+                                    Pc(x, y) if x==1 && y==0 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    Mv(a,b,_,_) if a==1 && b==0 => Style::new(Some(IColor::Blue), None, Modifier::empty()),
+                                    Mv(_,_,x,y) if x==1 && y==0 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    _ if tos.contains(&(1,0)) => Style::new(Some(IColor::Yellow), None, Modifier::empty()),
+                                    _ => Style::default()
+                                }) {
+                                    HStack() {
+                                        Empty()
+                                        Text(text: board.at(1, 0).map_or(' ', |p| match p.c {
+                                            Color::Black => '♝',
+                                            Color::White => '♗'
+                                        }))
+                                        Empty()
+                                    }
+                                }
+                                Section(border: match selection.get() {
+                                    Pc(x, y) if x==1 && y==1 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    Mv(a,b,_,_) if a==1 && b==1 => Style::new(Some(IColor::Blue), None, Modifier::empty()),
+                                    Mv(_,_,x,y) if x==1 && y==1 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    _ if tos.contains(&(1,1)) => Style::new(Some(IColor::Yellow), None, Modifier::empty()),
+                                    _ => Style::default()
+                                }) {
+                                    HStack() {
+                                        Empty()
+                                        Text(text: board.at(1, 1).map_or(' ', |p| match p.c {
+                                            Color::Black => '♝',
+                                            Color::White => '♗'
+                                        }))
+                                        Empty()
+                                    }
+                                }
+                                Section(border: match selection.get() {
+                                    Pc(x, y) if x==1 && y==2 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    Mv(a,b,_,_) if a==1 && b==2 => Style::new(Some(IColor::Blue), None, Modifier::empty()),
+                                    Mv(_,_,x,y) if x==1 && y==2 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    _ if tos.contains(&(1,2)) => Style::new(Some(IColor::Yellow), None, Modifier::empty()),
+                                    _ => Style::default()
+                                }) {
+                                    HStack() {
+                                        Empty()
+                                        Text(text: board.at(1, 2).map_or(' ', |p| match p.c {
+                                            Color::Black => '♝',
+                                            Color::White => '♗'
+                                        }))
+                                        Empty()
+                                    }
+                                }
+                            }
+
+                            VStack() {
+                                Section(border: match selection.get() {
+                                    Pc(x, y) if x==2 && y==0 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    Mv(a,b,_,_) if a==2 && b==0 => Style::new(Some(IColor::Blue), None, Modifier::empty()),
+                                    Mv(_,_,x,y) if x==2 && y==0 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    _ if tos.contains(&(2,0)) => Style::new(Some(IColor::Yellow), None, Modifier::empty()),
+                                    _ => Style::default()
+                                }) {
+                                    HStack() {
+                                        Empty()
+                                        Text(text: board.at(2, 0).map_or(' ', |p| match p.c {
+                                            Color::Black => '♝',
+                                            Color::White => '♗'
+                                        }))
+                                        Empty()
+                                    }
+                                }
+                                Section(border: match selection.get() {
+                                    Pc(x, y) if x==2 && y==1 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    Mv(a,b,_,_) if a==2 && b==1 => Style::new(Some(IColor::Blue), None, Modifier::empty()),
+                                    Mv(_,_,x,y) if x==2 && y==1 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    _ if tos.contains(&(2,1)) => Style::new(Some(IColor::Yellow), None, Modifier::empty()),
+                                    _ => Style::default()
+                                }) {
+                                    HStack() {
+                                        Empty()
+                                        Text(text: board.at(2, 1).map_or(' ', |p| match p.c {
+                                            Color::Black => '♝',
+                                            Color::White => '♗'
+                                        }))
+                                        Empty()
+                                    }
+                                }
+                                Section(border: match selection.get() {
+                                    Pc(x, y) if x==2 && y==2 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    Mv(a,b,_,_) if a==2 && b==2 => Style::new(Some(IColor::Blue), None, Modifier::empty()),
+                                    Mv(_,_,x,y) if x==2 && y==2 => Style::new(Some(IColor::Green), None, Modifier::empty()),
+                                    _ if tos.contains(&(2,2)) => Style::new(Some(IColor::Yellow), None, Modifier::empty()),
+                                    _ => Style::default()
+                                }) {
+                                    HStack() {
+                                        Empty()
+                                        Text(text: board.at(2, 2).map_or(' ', |p| match p.c {
+                                            Color::Black => '♝',
+                                            Color::White => '♗'
+                                        }))
+                                        Empty()
+                                    }
                                 }
                             }
                         }
