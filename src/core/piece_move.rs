@@ -70,4 +70,14 @@ impl Move {
             fromf, fromr, tof, tor, istake as u8, castletype, is_ep
         )
     }
+
+    pub fn as_tuple(&self) -> (Position, Position, Vec<MoveModifier>, PieceType, Color) {
+        (
+            self.from,
+            self.to,
+            self.modifiers.clone(),
+            self.piece,
+            self.color,
+        )
+    }
 }
