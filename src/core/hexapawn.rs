@@ -1,12 +1,10 @@
 use std::time::Duration;
 
+use crate::grbl;
 use anyhow::{bail, Result};
 use serialport::SerialPortType;
 
-use crate::{
-    core::{color::Color, piece_move::Move},
-    utils::event_emitter::EventEmitter,
-};
+use crate::{core::color::Color, utils::event_emitter::EventEmitter};
 
 #[derive(Clone)]
 pub struct HexPiece {
@@ -112,48 +110,87 @@ impl HexapawnBoard {
         let mut emitter = EventEmitter::default();
 
         if serial {
-            emitter.on(Event::Move, |arg: Move| {
-                let ports = serialport::available_ports().expect("No ports found");
-                let mut port_name = Default::default();
+            let ports = serialport::available_ports().expect("No ports found");
+            let mut port_name = Default::default();
 
-                for p in ports {
-                    if let SerialPortType::UsbPort(usb) = p.port_type {
-                        if let Some(name) = usb.product {
-                            if name.to_lowercase().contains("uno") {
-                                port_name = p.port_name;
-                                break;
-                            }
+            for p in ports {
+                if let SerialPortType::UsbPort(usb) = p.port_type {
+                    if let Some(name) = usb.product {
+                        if name.to_lowercase().contains("uno") {
+                            port_name = p.port_name;
+                            break;
                         }
                     }
                 }
+            }
 
-                if port_name == String::default() {
-                    panic!("Failed to find Arduino Uno");
+            if port_name == String::default() {
+                panic!("Failed to find Arduino Uno");
+            }
+
+            let port = serialport::new(port_name, 115200)
+                .timeout(Duration::from_secs(5))
+                .open()
+                .expect("Failed to open Arduino Uno");
+
+            grbl::init(port);
+
+            emitter.on(Event::Move, |arg: (usize, usize, usize, usize, bool)| {
+                let (tda_x1, tda_y1, tda_x2, tda_y2, capture) = arg;
+
+                // all values are currently 2d-array (tda) values, ranging from (0,0) to (2,2), with the origin at the top-left
+                // we need to fix this, with a minimum of 0.5 and a max of 2.5, and the origin at the bottom-left
+
+                let x1 = tda_x1 as f64 + 0.5;
+                let y1 = 2.5 - tda_y1 as f64;
+
+                let x2 = tda_x2 as f64 + 0.5;
+                let y2 = 2.5 - tda_y2 as f64;
+
+                if capture {
+                    grbl::goto((x2, y2)).unwrap();
+
+                    // todo: electromangnet on
+
+                    // go into on-the-line position
+                    grbl::down_half().unwrap();
+                    grbl::left_half().unwrap();
+
+                    // always on-the-line
+                    grbl::goto((0.0, 1.0)).unwrap();
+
+                    // go to the left-side center
+                    grbl::up_half().unwrap();
+
+                    // move left 1, into captured pieces zone
+                    grbl::left_half().unwrap();
+
+                    // todo: electromagnet off
+
+                    // go to (0,0)
+                    grbl::origin().unwrap();
                 }
 
-                let mut port = serialport::new(port_name, 9600)
-                    .timeout(Duration::from_secs(5))
-                    .open()
-                    .expect("Failed to open Arduino Uno");
+                // go to the first piece
+                grbl::goto((x1, y1)).unwrap();
 
-                let for_arduino = arg.to_ard();
-                let output = for_arduino.as_bytes();
+                // todo: electromagnet on
 
-                port.write_all(output)
-                    .expect("Failed to write to Arduino Uno");
+                // go into on-the-line position
+                grbl::down_half().unwrap();
+                grbl::left_half().unwrap();
 
-                let mut input = Default::default();
+                // always on-the-line, go to the second piece
+                grbl::goto((x2 - 0.5, y2 - 0.5)).unwrap();
 
-                port.read_to_string(&mut input)
-                    .expect("Failed to read Ok from Arduino Uno");
+                // go half-up, half-right
+                grbl::up_half().unwrap();
+                grbl::right_half().unwrap();
 
-                assert!(
-                    input == "ok",
-                    "Arduino Uno failed to respond with Ok, instead responded with {}",
-                    input
-                );
+                // todo: electromagnet off
 
-                drop(port);
+                // go to (0,0)
+                grbl::origin().unwrap();
             });
         }
 
