@@ -235,23 +235,21 @@ impl HexapawnBoard {
             == 0
         {
             Some(self.turn.opposite())
-        } else if self
+        } else if let Some(p) = self
             .board
             .iter()
             .flatten()
             .filter(|x| x.is_some())
             .map(|x| x.as_ref().unwrap())
-            .filter(|p| p.c == self.turn)
             .filter(|p| {
-                p.y == match self.turn {
+                p.y == match p.c {
                     Color::White => 0,
                     Color::Black => 2,
                 }
             })
             .next()
-            .is_some()
         {
-            Some(self.turn)
+            Some(p.c)
         } else {
             None
         }

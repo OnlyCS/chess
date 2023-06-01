@@ -178,7 +178,11 @@ impl Component for Root {
 
                                 selection.set(Pc(a, b));
                                 error_message.mutate(|e| e.clear());
-								freeze.set(true);
+								
+
+								if grbl::connected() {
+									freeze.set(true);
+								}
 							});
                         }
                     },
