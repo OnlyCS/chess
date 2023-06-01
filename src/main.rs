@@ -13,16 +13,25 @@ pub mod grbl;
 pub mod ui;
 pub mod utils;
 
-use anyhow::Result;
+use anyhow::*;
 use clap::Parser;
 use intuitive::terminal::Terminal;
 
-use crate::{cli::args::Cli, core::hexapawn::HexapawnBoard, ui::hex_ui::Root};
+use crate::{
+    cli::args::Cli, core::hexapawn::HexapawnBoard, ui::hex_ui::Root as HexRoot,
+    ui::root::Root as ChessRoot,
+};
 
 fn main() -> Result<()> {
     let args = Cli::parse();
 
-    Terminal::new(Root::with_board(HexapawnBoard::new(args.serial)))?.run()?;
+    if args.hexapawn {
+        Terminal::new(HexRoot::with_board(HexapawnBoard::new(args.serial)))?.run()?;
+    } else if args.serial {
+        bail!("serial is only supported for hexapawn. Try using \"-x\"")
+    } else {
+        Terminal::new(ChessRoot::new())?.run()?;
+    }
 
     Ok(())
 }
