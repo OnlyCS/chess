@@ -1,10 +1,10 @@
 use anyhow::*;
 use serialport::SerialPort;
 
-pub const RIGHT_F100: &'static str = "$J=G21G91X-1Y1F100";
-pub const LEFT_F100: &'static str = "$J=G21G91X1Y-1F100";
-pub const UP_F100: &'static str = "$J=G21G91X-1Y-1F100";
-pub const DOWN_F100: &'static str = "$J=G21G91X1Y1F100";
+pub const RIGHT_F100: &'static str = "$J=G21G91X1Y1F100";
+pub const LEFT_F100: &'static str = "$J=G21G91X-1Y-1F100";
+pub const UP_F100: &'static str = "$J=G21G91X1Y-1F100";
+pub const DOWN_F100: &'static str = "$J=G21G91X-1Y1F100";
 
 static mut SERIALPORT: Option<Box<dyn SerialPort>> = None;
 static mut CURRENT: (f64, f64) = (0.0, 0.0);
