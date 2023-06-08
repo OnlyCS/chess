@@ -1,7 +1,12 @@
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(author = "OnlyCS", version, about = "Chess GUI and AI")]
+#[command(
+    name = "chess",
+    author = "OnlyCS",
+    version,
+    about = "Chess TUI and grbl controller"
+)]
 pub struct Cli {
     #[arg(
         short = 's',
@@ -18,4 +23,12 @@ pub struct Cli {
         default_value_t = false
     )]
     pub hexapawn: bool,
+
+    #[arg(
+        short = 'm',
+        long = "manual",
+        help = "manually send up-down-left-right commands",
+        default_value_t = false
+    )]
+    pub manual: bool,
 }

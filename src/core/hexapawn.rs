@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::grbl;
+use crate::grbl::{self};
 use anyhow::{bail, Result};
 use serialport::SerialPortType;
 
@@ -150,7 +150,7 @@ impl HexapawnBoard {
                 if capture {
                     grbl::goto((x2, y2)).unwrap();
 
-                    // todo: electromangnet on
+                    grbl::emag_on().unwrap();
 
                     // go into on-the-line position
                     grbl::down_half().unwrap();
@@ -162,10 +162,11 @@ impl HexapawnBoard {
                     // go to the left-side center
                     grbl::up_half().unwrap();
 
+                    // not enough space:
                     // move left 1, into captured pieces zone
-                    grbl::left_half().unwrap();
+                    // grbl::left_half().unwrap();
 
-                    // todo: electromagnet off
+                    grbl::emag_off().unwrap();
 
                     // go to (0,0)
                     grbl::origin().unwrap();
@@ -174,7 +175,7 @@ impl HexapawnBoard {
                 // go to the first piece
                 grbl::goto((x1, y1)).unwrap();
 
-                // todo: electromagnet on
+                grbl::emag_on().unwrap();
 
                 // go into on-the-line position
                 grbl::down_half().unwrap();
@@ -187,7 +188,7 @@ impl HexapawnBoard {
                 grbl::up_half().unwrap();
                 grbl::right_half().unwrap();
 
-                // todo: electromagnet off
+                grbl::emag_off().unwrap();
 
                 // go to (0,0)
                 grbl::origin().unwrap();

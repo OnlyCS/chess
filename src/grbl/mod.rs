@@ -1,18 +1,46 @@
+use std::{io::Write, thread::sleep, time::Duration};
+
 use anyhow::*;
 use serialport::SerialPort;
 
-pub const RIGHT_F100: &'static str = "$J=G21G91X1Y1F100";
-pub const LEFT_F100: &'static str = "$J=G21G91X-1Y-1F100";
-pub const UP_F100: &'static str = "$J=G21G91X1Y-1F100";
-pub const DOWN_F100: &'static str = "$J=G21G91X-1Y1F100";
+pub const COMMAND_RIGHT_HALFSTEP: &'static str = "$J=G21G91X0.3Y0.3F50";
+pub const COMMAND_LEFT_HALFSTEP: &'static str = "$J=G21G91X-0.3Y-0.3F50";
+pub const COMMAND_UP_HALFSTEP: &'static str = "$J=G21G91X0.3Y-0.3F50";
+pub const COMMAND_DOWN_HALFSTEP: &'static str = "$J=G21G91X-0.3Y0.3F50";
+pub const COMMAND_EMAG_ON: &'static str = "E1";
+pub const COMMAND_EMAG_OFF: &'static str = "E0";
 
 static mut SERIALPORT: Option<Box<dyn SerialPort>> = None;
 static mut CURRENT: (f64, f64) = (0.0, 0.0);
 
-pub fn up_half() -> Result<()> {
-    writeln!(unsafe { SERIALPORT.as_mut().unwrap() }, "{UP_F100}")?;
+pub fn emag_on() -> Result<()> {
+    writeln!(unsafe { SERIALPORT.as_mut().unwrap() }, "{COMMAND_EMAG_ON}")?;
 
-    unsafe { CURRENT.1 += 0.5 }
+    Ok(())
+}
+
+pub fn emag_off() -> Result<()> {
+    writeln!(
+        unsafe { SERIALPORT.as_mut().unwrap() },
+        "{COMMAND_EMAG_OFF}"
+    )?;
+
+    Ok(())
+}
+
+pub fn up_half() -> Result<()> {
+    if unsafe { CURRENT.1 } >= 3.0 {
+        bail!("Cannot go up any further");
+    }
+
+    writeln!(
+        unsafe { SERIALPORT.as_mut().unwrap() },
+        "{COMMAND_UP_HALFSTEP}"
+    )?;
+
+    unsafe { CURRENT = (CURRENT.0, CURRENT.1 + 0.5) }
+
+    block_until_idle();
 
     Ok(())
 }
@@ -25,9 +53,18 @@ pub fn up_full() -> Result<()> {
 }
 
 pub fn down_half() -> Result<()> {
-    writeln!(unsafe { SERIALPORT.as_mut().unwrap() }, "{DOWN_F100}")?;
+    if unsafe { CURRENT.1 } <= 0.0 {
+        bail!("Cannot go down any further");
+    }
 
-    unsafe { CURRENT.1 -= 0.5 }
+    writeln!(
+        unsafe { SERIALPORT.as_mut().unwrap() },
+        "{COMMAND_DOWN_HALFSTEP}"
+    )?;
+
+    unsafe { CURRENT = (CURRENT.0, CURRENT.1 - 0.5) }
+
+    block_until_idle();
 
     Ok(())
 }
@@ -40,9 +77,18 @@ pub fn down_full() -> Result<()> {
 }
 
 pub fn left_half() -> Result<()> {
-    writeln!(unsafe { SERIALPORT.as_mut().unwrap() }, "{LEFT_F100}")?;
+    if unsafe { CURRENT.0 } <= 0.0 {
+        bail!("Cannot go left any further");
+    }
 
-    unsafe { CURRENT.0 -= 0.5 }
+    writeln!(
+        unsafe { SERIALPORT.as_mut().unwrap() },
+        "{COMMAND_LEFT_HALFSTEP}"
+    )?;
+
+    unsafe { CURRENT = (CURRENT.0 - 0.5, CURRENT.1) }
+
+    block_until_idle();
 
     Ok(())
 }
@@ -55,9 +101,18 @@ pub fn left_full() -> Result<()> {
 }
 
 pub fn right_half() -> Result<()> {
-    writeln!(unsafe { SERIALPORT.as_mut().unwrap() }, "{RIGHT_F100}")?;
+    if unsafe { CURRENT.0 } >= 3.0 {
+        bail!("Cannot go right any further");
+    }
 
-    unsafe { CURRENT.0 += 0.5 }
+    writeln!(
+        unsafe { SERIALPORT.as_mut().unwrap() },
+        "{COMMAND_RIGHT_HALFSTEP}"
+    )?;
+
+    unsafe { CURRENT = (CURRENT.0 + 0.5, CURRENT.1) }
+
+    block_until_idle();
 
     Ok(())
 }
@@ -70,12 +125,13 @@ pub fn right_full() -> Result<()> {
 }
 
 pub fn origin() -> Result<()> {
-    goto((0.0, 0.0))
+    goto((0.0, 0.0))?;
+
+    Ok(())
 }
 
 pub fn goto(pos: (f64, f64)) -> Result<()> {
     let (x_to, y_to) = pos.clone();
-    let (x_from, y_from) = unsafe { CURRENT };
 
     // x_to and y_to must be a .5 or .0
     if x_to.fract() != 0.0 && x_to.fract() != 0.5 {
@@ -95,33 +151,24 @@ pub fn goto(pos: (f64, f64)) -> Result<()> {
         bail!("y_to must be between 0 and 3");
     }
 
-    let going_up = y_to > y_from;
-    let going_right = x_to > x_from;
+    let going_up = y_to > unsafe { get_current_pos() }.1;
+    let going_right = x_to > unsafe { get_current_pos() }.0;
 
-    let mut y = y_from;
-    let mut x = x_from;
-
-    while y != y_to {
+    while unsafe { get_current_pos() }.1 != y_to {
         if going_up {
             up_half()?;
-            y += 0.5;
         } else {
             down_half()?;
-            y -= 0.5;
         }
     }
 
-    while x != x_to {
+    while unsafe { get_current_pos() }.0 != x_to {
         if going_right {
             right_half()?;
-            x += 0.5;
         } else {
             left_half()?;
-            x -= 0.5;
         }
     }
-
-    unsafe { CURRENT = (x_to, y_to) };
 
     Ok(())
 }
@@ -167,6 +214,23 @@ pub fn status() -> Result<Status> {
         Ok(Status::Idle)
     } else {
         Ok(Status::Working)
+    }
+}
+
+fn block_until_idle() {
+    let mut iterations = 0;
+
+    loop {
+        if status().unwrap() == Status::Idle {
+            break;
+        }
+
+        if iterations > 10000 {
+            panic!("timed out waiting for idle");
+        }
+
+        iterations += 1;
+        sleep(Duration::from_millis(100));
     }
 }
 
