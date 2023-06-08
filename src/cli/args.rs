@@ -1,12 +1,7 @@
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(
-    name = "chess",
-    author = "OnlyCS",
-    version,
-    about = "Chess TUI and grbl controller"
-)]
+#[command(author = "OnlyCS", version, about = "Chess TUI and grbl controller")]
 pub struct Cli {
     #[arg(
         short = 's',
