@@ -1,8 +1,6 @@
 use std::ffi::c_int;
 
-use rayon::prelude::*;
-
-use super::*;
+use super::helper;
 use crate::prelude::*;
 
 #[rustfmt::skip]
@@ -119,10 +117,10 @@ pub fn gen_magic_numbers() {
         let magic_number = gen_magic_number(
             sq,
             RELEVANT_BITS_ROOK[sq as usize],
-            |sq| stdgen::gen_movement_mask(sq, stdgen::DIRS_ROOK),
-            |sq, filled| stdgen::gen_attack_mask(sq, filled, stdgen::DIRS_ROOK),
+            |sq| helper::gen_movement_mask(sq, helper::DIRS_ROOK),
+            |sq, filled| helper::gen_attack_mask(sq, filled, helper::DIRS_ROOK),
         );
-        println!("    {:#x}ull,", magic_number.unwrap_or(0));
+        println!("    {:#x}u64,", magic_number.unwrap_or(0));
     }
     println!("];");
 
@@ -131,10 +129,10 @@ pub fn gen_magic_numbers() {
         let magic_number = gen_magic_number(
             sq,
             RELEVANT_BITS_BISHOP[sq as usize],
-            |sq| stdgen::gen_movement_mask(sq, stdgen::DIRS_BISHOP),
-            |sq, filled| stdgen::gen_attack_mask(sq, filled, stdgen::DIRS_BISHOP),
+            |sq| helper::gen_movement_mask(sq, helper::DIRS_BISHOP),
+            |sq, filled| helper::gen_attack_mask(sq, filled, helper::DIRS_BISHOP),
         );
-        println!("    {:#x}ull,", magic_number.unwrap_or(0));
+        println!("    {:#x}u64,", magic_number.unwrap_or(0));
     }
     println!("];");
 }

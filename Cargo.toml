@@ -5,3 +5,6 @@ edition = "2021"
 
 [dependencies]
 rayon = "1.8.0"
+
+[features]
+gen-tables = []

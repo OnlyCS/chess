@@ -2,6 +2,7 @@ use std::ops::Range;
 
 use crate::prelude::*;
 
+#[const_trait]
 pub trait SquareU8: Sized {
     fn new(rank: u8, file: u8) -> Self;
     fn rank(&self) -> u8;
@@ -9,42 +10,44 @@ pub trait SquareU8: Sized {
     fn valid_square(&self) -> bool;
     fn to_bitboard(&self) -> Bitboard;
     fn try_add(&self, other_rank: i8, other_file: i8) -> Option<Self>;
+    fn get(&self) -> u8;
+
     fn every() -> impl Iterator<Item = Self>;
 
-    fn pretty(&self) -> String {
-        if !self.valid_square() {
-            return String::from("Invalid square");
-        }
+    // fn pretty(&self) -> String {
+    //     if !self.valid_square() {
+    //         return String::from("Invalid square");
+    //     }
 
-        let file = { ('a' as u8 + self.file()) as char };
-        let rank = { ('1' as u8 + self.rank()) as char };
+    //     let file = { ('a' as u8 + self.file()) as char };
+    //     let rank = { ('1' as u8 + self.rank()) as char };
 
-        return format!("{}{}", file, rank);
-    }
+    //     return format!("{}{}", file, rank);
+    // }
 }
 
 /// Number 0-63
 pub type Square = u8;
 
-impl SquareU8 for Square {
+impl const SquareU8 for Square {
     fn new(rank: u8, file: u8) -> Square {
-        return rank * 8 + file;
+        rank * 8 + file
     }
 
     fn rank(&self) -> u8 {
-        return self / 8;
+        self / 8
     }
 
     fn file(&self) -> u8 {
-        return self % 8;
+        self % 8
     }
 
     fn valid_square(&self) -> bool {
-        return *self < 64;
+        *self < 64
     }
 
     fn to_bitboard(&self) -> Bitboard {
-        return 1 << self;
+        1 << self
     }
 
     fn try_add(&self, other_rank: i8, other_file: i8) -> Option<Square> {
@@ -60,5 +63,9 @@ impl SquareU8 for Square {
 
     fn every() -> Range<Square> {
         0..64
+    }
+
+    fn get(&self) -> u8 {
+        *self
     }
 }
