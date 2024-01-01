@@ -112,7 +112,7 @@ pub fn gen_magic_numbers() {
         srandom(seed as i32);
     }
 
-    println!("pub const MAGIC_NUMBERS_ROOK: [u64; 64] = [");
+    println!("pub const MAGICS_ROOK: [u64; 64] = [");
     for sq in Square::every() {
         let magic_number = gen_magic_number(
             sq,
@@ -124,7 +124,7 @@ pub fn gen_magic_numbers() {
     }
     println!("];");
 
-    println!("pub const MAGIC_NUMBERS_BISHOP: [u64; 64] = [");
+    println!("pub const MAGICS_BISHOP: [u64; 64] = [");
     for sq in Square::every() {
         let magic_number = gen_magic_number(
             sq,

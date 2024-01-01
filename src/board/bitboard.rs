@@ -17,14 +17,15 @@ const INDEX64: [u8; 64] = [
 pub trait BitboardU64 {
     const EMPTY: Self;
 
-    fn clear_bit(&mut self, idx: u8);
+    fn clear_bit(&mut self, idx: Square);
     fn pop_bit(&mut self) -> Square;
     fn count_bits(&self) -> u8;
-    fn at(&self, idx: u8) -> bool;
-    fn set(&mut self, idx: u8);
-    fn unset(&mut self, idx: u8);
-    fn last_bit(&self) -> u8;
+    fn at(&self, idx: Square) -> bool;
+    fn set(&mut self, idx: Square);
+    fn unset(&mut self, idx: Square);
+    fn last_bit(&self) -> Square;
     fn set_occupancy(&self, index: usize, bits_in_mask: u8) -> Self;
+    fn trimmed_mul(&self, other: Self) -> Self;
     fn pretty(&self) -> String {
         let mut s = String::from("\n  a b c d e f g h\n");
 
@@ -52,8 +53,6 @@ pub trait BitboardU64 {
 
         return s;
     }
-
-    fn trimmed_mul(&self, other: Self) -> Self;
 }
 
 /// Little-endian rank-file mapping.

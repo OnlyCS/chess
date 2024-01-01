@@ -11,8 +11,9 @@ pub mod generated_magics;
 #[rustfmt::skip]
 #[allow(warnings)]
 #[cfg(not(feature = "gen-tables"))]
-pub mod generated_lookup_tables {
-	include!(concat!("generated_lookups.rs"));
+pub mod generated_lookups {
+	// avoid rust-analyzer going bazonkers
+	include!("generated_lookups.rs");
 }
 
 /// lookup tables generation

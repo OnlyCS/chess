@@ -2,7 +2,6 @@ use std::ops::Range;
 
 use crate::prelude::*;
 
-#[const_trait]
 pub trait SquareU8: Sized {
     fn new(rank: u8, file: u8) -> Self;
     fn rank(&self) -> u8;
@@ -11,19 +10,18 @@ pub trait SquareU8: Sized {
     fn to_bitboard(&self) -> Bitboard;
     fn try_add(&self, other_rank: i8, other_file: i8) -> Option<Self>;
     fn get(&self) -> u8;
-
     fn every() -> impl Iterator<Item = Self>;
 
-    // fn pretty(&self) -> String {
-    //     if !self.valid_square() {
-    //         return String::from("Invalid square");
-    //     }
+    fn pretty(&self) -> String {
+        if !self.valid_square() {
+            return String::from("Invalid square");
+        }
 
-    //     let file = { ('a' as u8 + self.file()) as char };
-    //     let rank = { ('1' as u8 + self.rank()) as char };
+        let file = { ('a' as u8 + self.file()) as char };
+        let rank = { ('1' as u8 + self.rank()) as char };
 
-    //     return format!("{}{}", file, rank);
-    // }
+        return format!("{}{}", file, rank);
+    }
 }
 
 /// Number 0-63
