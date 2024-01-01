@@ -1,3 +1,5 @@
+use std::ops::Shr;
+
 use crate::prelude::*;
 
 // goofy
@@ -14,8 +16,10 @@ const INDEX64: [u8; 64] = [
    25, 14, 19,  9, 13,  8,  7,  6
 ];
 
-pub trait BitboardU64 {
+pub trait BitboardU64: Sized + Copy + Shr<u8, Output = Self> + PartialEq {
     const EMPTY: Self;
+    const FILE_A: Self;
+    const RANK_1: Self;
 
     fn clear_bit(&mut self, idx: Square);
     fn pop_bit(&mut self) -> Square;
@@ -26,6 +30,27 @@ pub trait BitboardU64 {
     fn last_bit(&self) -> Square;
     fn set_occupancy(&self, index: usize, bits_in_mask: u8) -> Self;
     fn trimmed_mul(&self, other: Self) -> Self;
+    fn safe_shl(&self, other: u8) -> Self;
+    fn bit_pos_iter(mut self) -> impl Iterator<Item = Square> {
+        std::iter::from_fn(move || {
+            if self == Self::EMPTY {
+                return None;
+            }
+
+            let sq = self.pop_bit();
+
+            return Some(sq);
+        })
+    }
+
+    fn rank(rank: u8) -> Self {
+        Self::RANK_1.safe_shl(rank * 8)
+    }
+
+    fn file(file: u8) -> Self {
+        Self::FILE_A >> file
+    }
+
     fn pretty(&self) -> String {
         let mut s = String::from("\n  a b c d e f g h\n");
 
@@ -61,6 +86,8 @@ pub type Bitboard = u64;
 
 impl const BitboardU64 for Bitboard {
     const EMPTY: Bitboard = 0;
+    const FILE_A: Self = 0x8080808080808080u64;
+    const RANK_1: Self = 0xffu64;
 
     fn clear_bit(&mut self, idx: u8) {
         *self &= !(1 << idx);
@@ -98,6 +125,14 @@ impl const BitboardU64 for Bitboard {
         let otheru128 = other as u128;
         let product = thisu128 * otheru128;
         let trim64 = product & u64::MAX as u128;
+
+        return trim64 as u64;
+    }
+
+    fn safe_shl(&self, other: u8) -> Self {
+        let thisu128 = *self as u128;
+        let shifted = thisu128 << other;
+        let trim64 = shifted & u64::MAX as u128;
 
         return trim64 as u64;
     }
