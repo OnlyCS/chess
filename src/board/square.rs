@@ -11,6 +11,15 @@ pub trait SquareU8: Sized {
     fn try_add(&self, other_rank: i8, other_file: i8) -> Option<Self>;
     fn get(&self) -> u8;
     fn every() -> impl Iterator<Item = Self>;
+    fn distance_to(&self, other: Self) -> f64 {
+        let x1 = self.rank() as f64;
+        let y1 = self.file() as f64;
+
+        let x2 = other.rank() as f64;
+        let y2 = other.file() as f64;
+
+        ((x2 - x1).powi(2) + (y2 - y1).powi(2)).sqrt()
+    }
 
     fn pretty(&self) -> String {
         if !self.valid_square() {

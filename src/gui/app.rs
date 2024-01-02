@@ -6,7 +6,7 @@ use eframe::{
     epaint::{Color32, Rounding, Stroke},
 };
 
-pub const LEN_SQ: f32 = 100.0;
+pub const LEN_SQ: f32 = 75.0;
 
 #[derive(Clone, Copy)]
 pub struct HighlightList {
@@ -28,7 +28,7 @@ impl HighlightList {
         self.selected.replace(sq);
     }
 
-    pub fn clear_select(&mut self) {
+    pub fn deselect(&mut self) {
         self.selected = None;
     }
 
@@ -114,7 +114,7 @@ fn collect_data<'a>(app: &ChessApp) -> Vec<SquareData<'a>> {
 
         fn round(a: bool) -> f32 {
             if a {
-                10.0
+                15.0
             } else {
                 0.0
             }
@@ -134,8 +134,6 @@ fn collect_data<'a>(app: &ChessApp) -> Vec<SquareData<'a>> {
             has_piece: piece.is_some(),
             sq_idx: ipiece,
             on_click: |app, has_piece, movable, sq| {
-                println!("clicked on {}", sq.pretty());
-
                 if movable && let Some(piece) = app.selected_piece {
                     app.position.make_move(piece, sq);
                     app.highlight.from_to(piece, sq);
@@ -146,7 +144,7 @@ fn collect_data<'a>(app: &ChessApp) -> Vec<SquareData<'a>> {
                     app.highlight.select(sq);
                 } else {
                     app.selected_piece = None;
-                    app.highlight.clear_select();
+                    app.highlight.deselect();
                 }
             },
         });

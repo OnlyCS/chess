@@ -27,7 +27,9 @@ pub fn pawn(
         moves |= pawn_bb.safe_shl(7) & occupied & Bitboard::rank(pawn_at.rank() + 1);
         moves |= pawn_bb.safe_shl(9) & occupied & Bitboard::rank(pawn_at.rank() + 1);
 
-        if let Some(target) = ep_target {
+        if let Some(target) = ep_target
+            && target.rank() == pawn_at.rank() + 1
+        {
             let target_bb = target.to_bitboard();
 
             moves |= pawn_bb.safe_shl(7) & target_bb;
@@ -39,7 +41,9 @@ pub fn pawn(
         moves |= pawn_bb >> 7 & occupied & Bitboard::rank(pawn_at.rank() - 1);
         moves |= pawn_bb >> 9 & occupied & Bitboard::rank(pawn_at.rank() - 1);
 
-        if let Some(target) = ep_target {
+        if let Some(target) = ep_target
+            && target.rank() == pawn_at.rank() - 1
+        {
             let target_bb = target.to_bitboard();
 
             moves |= pawn_bb >> 7 & target_bb;
