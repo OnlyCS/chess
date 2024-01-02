@@ -2,10 +2,14 @@
 pub mod magic;
 
 /// sliding piece movements
-pub mod sliders;
+mod sliders;
 
 /// pawn movements
-pub mod pawns;
+mod pawns;
 
 /// non-sliding piece movements
-pub mod non_sliders;
+mod non_sliders;
+
+pub use non_sliders::*;
+pub use pawns::*;
+pub use sliders::*;

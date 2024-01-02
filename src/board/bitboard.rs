@@ -48,7 +48,7 @@ pub trait BitboardU64: Sized + Copy + Shr<u8, Output = Self> + PartialEq {
     }
 
     fn file(file: u8) -> Self {
-        Self::FILE_A >> file
+        Self::FILE_A.safe_shl(file)
     }
 
     fn pretty(&self) -> String {
@@ -86,7 +86,7 @@ pub type Bitboard = u64;
 
 impl const BitboardU64 for Bitboard {
     const EMPTY: Bitboard = 0;
-    const FILE_A: Self = 0x8080808080808080u64;
+    const FILE_A: Self = 0x0101010101010101u64;
     const RANK_1: Self = 0xffu64;
 
     fn clear_bit(&mut self, idx: u8) {

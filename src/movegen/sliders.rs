@@ -9,7 +9,7 @@ use magic::{generated_lookups::*, generated_magics::*};
 /// assuming occupied squares are enemy pieces
 ///
 /// Make sure to bitwise-and the result with !friendly_pieces
-pub fn rook_moves(rook_at: Square, occupied: Bitboard) -> Bitboard {
+pub fn rook(rook_at: Square, occupied: Bitboard) -> Bitboard {
     let rook_at = rook_at as usize;
 
     let movements = MOVEMENTS_ROOK[rook_at];
@@ -29,7 +29,7 @@ pub fn rook_moves(rook_at: Square, occupied: Bitboard) -> Bitboard {
 /// assuming occupied squares are enemy pieces
 ///
 /// Make sure to bitwise-and the result with !friendly_pieces
-pub fn bishop_moves(bishop_at: Square, occupied: Bitboard) -> Bitboard {
+pub fn bishop(bishop_at: Square, occupied: Bitboard) -> Bitboard {
     let bishop_at = bishop_at as usize;
 
     let movements = MOVEMENTS_BISHOP[bishop_at];
@@ -49,6 +49,6 @@ pub fn bishop_moves(bishop_at: Square, occupied: Bitboard) -> Bitboard {
 /// assuming occupied squares are enemy pieces
 ///
 /// Make sure to bitwise-and the result with !friendly_pieces
-pub fn queen_moves(queen_at: Square, occupied: Bitboard) -> Bitboard {
-    return rook_moves(queen_at, occupied) | bishop_moves(queen_at, occupied);
+pub fn queen(queen_at: Square, occupied: Bitboard) -> Bitboard {
+    return rook(queen_at, occupied) | bishop(queen_at, occupied);
 }

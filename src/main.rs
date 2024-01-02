@@ -1,17 +1,10 @@
-#![feature(
-    const_for,
-    const_trait_impl,
-    const_mut_refs,
-    const_option,
-    const_closures,
-    let_chains
-)]
-#![allow(incomplete_features)]
+#![feature(const_for, const_trait_impl, const_mut_refs, const_option, let_chains)]
 
 mod board;
+mod gui;
 mod movegen;
 mod prelude;
 
 fn main() {
-    movegen::magic::lookup_tables::save();
+    gui::run().unwrap();
 }
