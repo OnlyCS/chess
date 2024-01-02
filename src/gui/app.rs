@@ -174,6 +174,12 @@ impl eframe::App for ChessApp {
                             self.highlight = HighlightList::default();
                             self.selected_piece = None;
                         }
+
+                        if i.key_pressed(egui::Key::ArrowRight) {
+                            self.position.redo_move();
+                            self.highlight = HighlightList::default();
+                            self.selected_piece = None;
+                        }
                     });
 
                     let mut data = collect_data(self).into_iter();

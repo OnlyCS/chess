@@ -1,3 +1,5 @@
+use std::mem;
+
 use crate::{movegen, prelude::*};
 
 #[derive(Clone, Copy)]
@@ -25,6 +27,7 @@ pub struct Position {
     pub ep_target: Option<Square>,
     pub castling_rights: CastlingRights,
     pub last_pos: Option<Box<Position>>,
+    pub next_pos: Option<Box<Position>>,
 }
 
 impl Position {
@@ -54,6 +57,7 @@ impl Position {
             ep_target: None,
             castling_rights: CastlingRights::new(),
             last_pos: None,
+            next_pos: None,
         }
     }
 
@@ -202,6 +206,7 @@ impl Position {
         self.turn.swap();
         self.last_pos = Some(Box::new(prev));
         self.ep_target = None;
+        self.next_pos = None;
 
         if let Some(special) = special {
             match special {
@@ -278,8 +283,18 @@ impl Position {
     }
 
     pub fn undo_move(&mut self) {
-        if let Some(prev) = self.last_pos.take() {
-            *self = *prev;
+        if let Some(mut prev) = self.last_pos.take() {
+            mem::swap(self, &mut *prev);
+
+            self.next_pos = Some(prev);
+        }
+    }
+
+    pub fn redo_move(&mut self) {
+        if let Some(mut next) = self.next_pos.take() {
+            mem::swap(self, &mut *next);
+
+            self.last_pos = Some(next);
         }
     }
 
