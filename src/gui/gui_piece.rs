@@ -47,6 +47,6 @@ pub struct Piece {
 
 impl Piece {
     pub fn image(&self) -> String {
-        format!("file://assets/{}_{}.png", self.kind, self.color)
+        format!("file://assets/{}_{}.svg", self.kind, self.color)
     }
 }

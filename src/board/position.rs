@@ -1,6 +1,6 @@
 use crate::{movegen, prelude::*};
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Position {
     pub n_white: Bitboard,
     pub n_black: Bitboard,
@@ -15,6 +15,7 @@ pub struct Position {
     pub turn: Color,
     pub ep_target: Option<Square>,
     pub castling_rights: CastlingRights,
+    pub last_pos: Option<Box<Position>>,
 }
 
 impl Position {
@@ -43,6 +44,7 @@ impl Position {
             turn: Color::White,
             ep_target: None,
             castling_rights: CastlingRights::new(),
+            last_pos: None,
         }
     }
 
@@ -116,6 +118,8 @@ impl Position {
     }
 
     pub fn make_move(&mut self, from: Square, to: Square) -> Option<()> {
+        let prev = self.clone();
+
         let piece = self.piece_at(from)?;
         let color = self.color_at(from)?;
 
@@ -148,8 +152,15 @@ impl Position {
         }
 
         self.turn.swap();
+        self.last_pos = Some(Box::new(prev));
 
         Some(())
+    }
+
+    pub fn undo_move(&mut self) {
+        if let Some(prev) = self.last_pos.take() {
+            *self = *prev;
+        }
     }
 
     pub fn moves_of(&self, pos: Square) -> Bitboard {

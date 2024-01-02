@@ -4,8 +4,10 @@ mod app;
 pub mod gui_piece;
 
 pub fn run() -> Result<(), eframe::Error> {
+    let vp_size = (8.0 * app::LEN_SQ) + 15.0;
+
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([415.0, 415.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([vp_size, vp_size]),
         ..Default::default()
     };
 

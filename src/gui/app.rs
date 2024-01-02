@@ -6,6 +6,51 @@ use eframe::{
     epaint::{Color32, Rounding, Stroke},
 };
 
+pub const LEN_SQ: f32 = 100.0;
+
+#[derive(Clone, Copy)]
+pub struct HighlightList {
+    selected: Option<Square>,
+    from: Option<Square>,
+    to: Option<Square>,
+}
+
+impl HighlightList {
+    fn new() -> Self {
+        Self {
+            selected: None,
+            from: None,
+            to: None,
+        }
+    }
+
+    pub fn select(&mut self, sq: Square) {
+        self.selected.replace(sq);
+    }
+
+    pub fn clear_select(&mut self) {
+        self.selected = None;
+    }
+
+    pub fn from_to(&mut self, from: Square, to: Square) {
+        self.from.replace(from);
+        self.to.replace(to);
+        self.selected = None;
+    }
+
+    pub fn highlighted(&self, sq: Square) -> bool {
+        self.selected.is_some_and(|a| a == sq)
+            || self.from.is_some_and(|a| a == sq)
+            || self.to.is_some_and(|a| a == sq)
+    }
+}
+
+impl Default for HighlightList {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct SquareData<'a> {
     pub button: egui::Button<'a>,
     pub has_piece: bool,
@@ -26,7 +71,11 @@ impl<'a> Default for SquareData<'a> {
     }
 }
 
-fn collect_data<'a>(position: Position, selected: Option<Square>) -> Vec<SquareData<'a>> {
+fn collect_data<'a>(app: &ChessApp) -> Vec<SquareData<'a>> {
+    let position = &app.position;
+    let selected = app.selected_piece;
+    let highlight = &app.highlight;
+
     let mut movable_sqs = HashSet::new();
     let unordered = position.collect().into_iter().enumerate().collect_vec();
     let ordered = unordered.chunks(8).rev().flatten().copied().collect_vec();
@@ -41,16 +90,17 @@ fn collect_data<'a>(position: Position, selected: Option<Square>) -> Vec<SquareD
         let (ipiece, piece) = ordered[i];
         let movable = movable_sqs.contains(&(ipiece as u8));
 
-        let color = if i % 2 == (i / 8) % 2 {
-            Color32::from_rgb(255, 206, 158)
-        } else {
-            Color32::from_rgb(209, 139, 71)
+        let color = match (i % 2 == (i / 8) % 2, highlight.highlighted(ipiece as u8)) {
+            (true, true) => Color32::from_rgb(244, 246, 128),
+            (true, false) => Color32::from_rgb(233, 237, 204),
+            (false, true) => Color32::from_rgb(187, 204, 68),
+            (false, false) => Color32::from_rgb(119, 153, 84),
         };
 
         let mut button = if let Some(piece) = piece {
             let image = egui::Image::new(piece.image())
-                .max_height(50.0)
-                .max_width(50.0);
+                .max_height(LEN_SQ)
+                .max_width(LEN_SQ);
 
             egui::Button::image(image)
         } else {
@@ -59,8 +109,7 @@ fn collect_data<'a>(position: Position, selected: Option<Square>) -> Vec<SquareD
 
         button = button
             .fill(color)
-            .stroke(egui::Stroke::new(2.0, Color32::BLACK))
-            .min_size(egui::vec2(50.0, 50.0))
+            .min_size(egui::vec2(LEN_SQ, LEN_SQ))
             .frame(false);
 
         fn round(a: bool) -> f32 {
@@ -87,10 +136,17 @@ fn collect_data<'a>(position: Position, selected: Option<Square>) -> Vec<SquareD
             on_click: |app, has_piece, movable, sq| {
                 println!("clicked on {}", sq.pretty());
 
-                if movable {
-                    app.position.make_move(app.selected_piece.unwrap(), sq);
-                } else if has_piece {
+                if movable && let Some(piece) = app.selected_piece {
+                    app.position.make_move(piece, sq);
+                    app.highlight.from_to(piece, sq);
+                } else if has_piece
+                    && (app.selected_piece.is_some_and(|s| s != sq) || app.selected_piece.is_none())
+                {
                     app.selected_piece = Some(sq);
+                    app.highlight.select(sq);
+                } else {
+                    app.selected_piece = None;
+                    app.highlight.clear_select();
                 }
             },
         });
@@ -103,6 +159,7 @@ fn collect_data<'a>(position: Position, selected: Option<Square>) -> Vec<SquareD
 pub struct ChessApp {
     position: Position,
     selected_piece: Option<Square>,
+    highlight: HighlightList,
 }
 
 impl eframe::App for ChessApp {
@@ -113,14 +170,20 @@ impl eframe::App for ChessApp {
                 .min_col_width(50.0)
                 .min_row_height(50.0)
                 .show(ui, |ui| {
-                    let mut data = collect_data(self.position, self.selected_piece).into_iter();
+                    ui.input(|i| {
+                        if i.key_pressed(egui::Key::ArrowLeft) {
+                            self.position.undo_move();
+                            self.highlight = HighlightList::default();
+                            self.selected_piece = None;
+                        }
+                    });
+
+                    let mut data = collect_data(self).into_iter();
 
                     for i in 0..64 {
-                        ui.allocate_ui(egui::vec2(50.0, 50.0), |ui| {
+                        ui.allocate_ui(egui::vec2(LEN_SQ, LEN_SQ), |ui| {
                             let square_data = data.next().unwrap();
-                            let mut circle_pos = ui.min_rect().center();
-
-                            circle_pos.x += 25.0;
+                            let circle_pos = ui.min_rect().center() + egui::vec2(LEN_SQ / 2.0, 0.0);
 
                             if ui.add(square_data.button).clicked() {
                                 (square_data.on_click)(
@@ -134,12 +197,22 @@ impl eframe::App for ChessApp {
                             }
 
                             if square_data.movable {
-                                ui.painter().circle(
-                                    circle_pos,
-                                    10.0,
-                                    Color32::from_rgba_unmultiplied(105, 105, 105, 150),
-                                    Stroke::NONE,
-                                )
+                                if square_data.has_piece {
+                                    ui.painter().circle_stroke(
+                                        circle_pos,
+                                        (LEN_SQ / 2.0) - (LEN_SQ / 20.0),
+                                        Stroke::new(
+                                            LEN_SQ / 10.0,
+                                            Color32::from_rgba_premultiplied(128, 0, 0, 200),
+                                        ),
+                                    );
+                                } else {
+                                    ui.painter().circle_filled(
+                                        circle_pos,
+                                        LEN_SQ / 6.0,
+                                        Color32::from_rgba_premultiplied(0, 0, 0, 25),
+                                    );
+                                }
                             }
                         });
 
