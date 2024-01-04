@@ -1,5 +1,3 @@
-use std::mem;
-
 use crate::{movegen, prelude::*};
 
 #[derive(Clone, Copy)]
@@ -11,7 +9,7 @@ pub enum SpecialMoveType {
     CastleKing,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Position {
     pub n_white: Bitboard,
     pub n_black: Bitboard,
@@ -26,8 +24,6 @@ pub struct Position {
     pub turn: Color,
     pub ep_target: Option<Square>,
     pub castling_rights: CastlingRights,
-    pub last_pos: Option<Box<Position>>,
-    pub next_pos: Option<Box<Position>>,
 }
 
 impl Position {
@@ -53,12 +49,16 @@ impl Position {
             rooks,
             queens,
             kings,
+
             turn: Color::White,
             ep_target: None,
+
             castling_rights: CastlingRights::new(),
-            last_pos: None,
-            next_pos: None,
         }
+    }
+
+    pub fn filled(&self) -> Bitboard {
+        self.n_white | self.n_black
     }
 
     fn piece_at(&self, square: Square) -> Option<gui::PieceType> {
@@ -189,10 +189,11 @@ impl Position {
         Some(())
     }
 
-    /// returns: make a promotion
-    pub fn make_move(&mut self, from: Square, to: Square) -> Option<bool> {
-        let prev = self.clone();
-
+    pub fn make_move(
+        &mut self,
+        from: Square,
+        to: Square,
+    ) -> Option<fn(&mut Position, gui::PieceType)> {
         let color = self.color_at(from)?;
         let piece = self.piece_at(from)?;
         let special = self.try_find_special(from, to);
@@ -204,9 +205,7 @@ impl Position {
         self._move(from, to)?;
 
         self.turn.swap();
-        self.last_pos = Some(Box::new(prev));
         self.ep_target = None;
-        self.next_pos = None;
 
         if let Some(special) = special {
             match special {
@@ -231,9 +230,6 @@ impl Position {
                         0,
                     )?);
                 }
-                SpecialMoveType::Promo => {
-                    return Some(true);
-                }
                 SpecialMoveType::EnPassant => {
                     let kill_pawn = to
                         .try_add(
@@ -248,6 +244,7 @@ impl Position {
                     *self.pieces_of_type_mut(gui::PieceType::Pawn) &= !kill_pawn;
                     *self.pieces_of_col_mut(color.other()) &= !kill_pawn;
                 }
+                _ => {}
             }
         }
 
@@ -279,25 +276,26 @@ impl Position {
             }
         }
 
-        Some(false)
-    }
-
-    pub fn undo_move(&mut self) {
-        if let Some(mut prev) = self.last_pos.take() {
-            mem::swap(self, &mut *prev);
-
-            self.next_pos = Some(prev);
+        match special {
+            Some(SpecialMoveType::Promo) => Some(|this, piece_type| {
+                this.promote(piece_type);
+            }),
+            _ => None,
         }
     }
 
-    pub fn redo_move(&mut self) {
-        if let Some(mut next) = self.next_pos.take() {
-            mem::swap(self, &mut *next);
+    fn promote(&mut self, to: gui::PieceType) {
+        let promotable = self.pawns & (Bitboard::rank(0) | Bitboard::rank(7));
 
-            self.last_pos = Some(next);
+        for bit in promotable.bit_pos_iter() {
+            let bit = bit.to_bitboard();
+            let pieces = self.pieces_of_type_mut(to);
+
+            *pieces |= bit;
         }
-    }
 
+        self.pawns &= !promotable;
+    }
     pub fn in_check(&self, color: Color) -> bool {
         let king = self.kings & self.pieces_of_col(color);
         let square = king.last_bit();
@@ -322,16 +320,14 @@ impl Position {
     }
 
     fn filter_checks(&self, mut moves: Bitboard, from: Square) -> Bitboard {
-        let mut this = self.clone();
+        for to_square in moves.bit_pos_iter() {
+            let mut this = *self;
 
-        for to_square in (*&moves).bit_pos_iter() {
             this.make_move(from, to_square);
 
             if this.in_check(self.turn) {
                 moves &= !to_square.to_bitboard();
             }
-
-            this.undo_move();
         }
 
         moves
@@ -354,7 +350,7 @@ impl Position {
             Some(gui::PieceType::Bishop) => movegen::bishop(pos, occupied),
             Some(gui::PieceType::Rook) => movegen::rook(pos, occupied),
             Some(gui::PieceType::Queen) => movegen::queen(pos, occupied),
-            Some(gui::PieceType::King) => movegen::king(pos, self.castling_rights, color, &self),
+            Some(gui::PieceType::King) => movegen::king(pos, self.castling_rights, color, *self),
             None => Bitboard::EMPTY,
         };
 

@@ -1,4 +1,4 @@
-pub use crate::{
+pub(crate) use crate::{
     board::{
         bitboard::{Bitboard, BitboardU64},
         castling::CastlingRights,
@@ -6,7 +6,9 @@ pub use crate::{
         position::Position,
         square::{Square, SquareU8},
     },
+    evaluation::{self, StaticEvaluator},
     movegen::magic,
+    rng,
 };
 
 pub use rayon::prelude::*;

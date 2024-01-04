@@ -35,9 +35,8 @@ pub fn king(
     king_at: Square,
     castling: CastlingRights,
     color: Color,
-    position: &Position,
+    position: Position,
 ) -> Bitboard {
-    let mut position = position.clone();
     let mut moves = Bitboard::EMPTY;
 
     for (file, rank) in KING_MOVEMENTS {
@@ -47,19 +46,17 @@ pub fn king(
     }
 
     let in_check_ks = {
+        let mut position = *&position;
         position.make_move(king_at, Square::new(king_at.rank(), 5));
-        let check = position.in_check(color);
-        position.undo_move();
 
-        check
+        position.in_check(color)
     };
 
     let in_check_qs = {
+        let mut position = *&position;
         position.make_move(king_at, Square::new(king_at.file(), 3));
-        let check = position.in_check(color);
-        position.undo_move();
 
-        check
+        position.in_check(color)
     };
 
     if !position.in_check(color) {

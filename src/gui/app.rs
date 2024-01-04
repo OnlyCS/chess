@@ -1,6 +1,6 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, thread};
 
-use crate::prelude::*;
+use crate::{evaluation::gametree::GameTree, prelude::*};
 use eframe::{
     egui,
     epaint::{Color32, Rounding, Stroke},
@@ -72,7 +72,7 @@ impl<'a> Default for SquareData<'a> {
 }
 
 fn collect_data<'a>(app: &ChessApp) -> Vec<SquareData<'a>> {
-    let position = &app.position;
+    let position = app.tree.position;
     let selected = app.selected_piece;
     let highlight = &app.highlight;
 
@@ -89,7 +89,6 @@ fn collect_data<'a>(app: &ChessApp) -> Vec<SquareData<'a>> {
     for i in 0..64 {
         let (ipiece, piece) = ordered[i];
         let movable = movable_sqs.contains(&(ipiece as u8));
-
         let color = match (i % 2 == (i / 8) % 2, highlight.highlighted(ipiece as u8)) {
             (true, true) => Color32::from_rgb(244, 246, 128),
             (true, false) => Color32::from_rgb(233, 237, 204),
@@ -135,7 +134,9 @@ fn collect_data<'a>(app: &ChessApp) -> Vec<SquareData<'a>> {
             sq_idx: ipiece,
             on_click: |app, has_piece, movable, sq| {
                 if movable && let Some(piece) = app.selected_piece {
-                    app.position.make_move(piece, sq);
+                    app.tree.position.make_move(piece, sq);
+                    app.tree.move_into(app.tree.position);
+
                     app.highlight.from_to(piece, sq);
                 } else if has_piece
                     && (app.selected_piece.is_some_and(|s| s != sq) || app.selected_piece.is_none())
@@ -155,7 +156,7 @@ fn collect_data<'a>(app: &ChessApp) -> Vec<SquareData<'a>> {
 
 #[derive(Default)]
 pub struct ChessApp {
-    position: Position,
+    tree: GameTree,
     selected_piece: Option<Square>,
     highlight: HighlightList,
 }
@@ -168,20 +169,6 @@ impl eframe::App for ChessApp {
                 .min_col_width(50.0)
                 .min_row_height(50.0)
                 .show(ui, |ui| {
-                    ui.input(|i| {
-                        if i.key_pressed(egui::Key::ArrowLeft) {
-                            self.position.undo_move();
-                            self.highlight = HighlightList::default();
-                            self.selected_piece = None;
-                        }
-
-                        if i.key_pressed(egui::Key::ArrowRight) {
-                            self.position.redo_move();
-                            self.highlight = HighlightList::default();
-                            self.selected_piece = None;
-                        }
-                    });
-
                     let mut data = collect_data(self).into_iter();
 
                     for i in 0..64 {

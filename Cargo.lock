@@ -358,6 +358,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
+name = "atomicfloat"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c729ef8f8d7d927492c4101476842587dd6bb751d0f87b109ca326df07777b6e"
+
+[[package]]
 name = "atspi"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -572,6 +578,7 @@ dependencies = [
 name = "chess"
 version = "0.1.0"
 dependencies = [
+ "atomicfloat",
  "eframe",
  "egui_extras",
  "itertools",

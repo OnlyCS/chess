@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+atomicfloat = "0.1.0"
 eframe = "0.24.1"
 egui_extras = { version = "0.24.2", features = ["file", "svg"] }
 itertools = "0.12.0"

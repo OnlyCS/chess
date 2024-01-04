@@ -27,24 +27,8 @@ const RELEVANT_BITS_BISHOP: [u8; 64] = [
     6, 5, 5, 5, 5, 5, 5, 6
 ];
 
-// 0-dep rng
-#[link(name = "c")]
-extern "C" {
-    fn srandom(seed: c_int);
-    fn random() -> c_int;
-}
-
-fn dense_random() -> u64 {
-    let n1 = unsafe { random() & 0xffff } as u64;
-    let n2 = unsafe { random() & 0xffff } as u64;
-    let n3 = unsafe { random() & 0xffff } as u64;
-    let n4 = unsafe { random() & 0xffff } as u64;
-
-    return n1 | (n2 << 16) | (n3 << 32) | (n4 << 48);
-}
-
 fn gen_candidate() -> u64 {
-    dense_random() & dense_random() & dense_random()
+    rng::dense_random() & rng::dense_random() & rng::dense_random()
 }
 
 fn gen_magic_number(
@@ -104,14 +88,6 @@ fn gen_magic_number(
 }
 
 pub fn gen_magic_numbers() {
-    let now = std::time::SystemTime::now();
-    let unix = now.duration_since(std::time::UNIX_EPOCH).unwrap();
-    let seed = unix.subsec_nanos();
-
-    unsafe {
-        srandom(seed as i32);
-    }
-
     println!("pub const MAGICS_ROOK: [u64; 64] = [");
     for sq in Square::every() {
         let magic_number = gen_magic_number(

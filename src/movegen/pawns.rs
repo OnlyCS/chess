@@ -38,6 +38,11 @@ pub fn pawn(
     } else {
         moves |= pawn_bb >> 8 & empty;
         moves |= pawn_bb >> 16 & empty >> 8 & empty & Bitboard::rank(4);
+
+        if pawn_at.rank() == 0 {
+            return moves;
+        }
+
         moves |= pawn_bb >> 7 & occupied & Bitboard::rank(pawn_at.rank() - 1);
         moves |= pawn_bb >> 9 & occupied & Bitboard::rank(pawn_at.rank() - 1);
 
