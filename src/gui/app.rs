@@ -1,6 +1,6 @@
-use std::{collections::HashSet, thread};
+use std::collections::HashSet;
 
-use crate::{evaluation::gametree::GameTree, prelude::*};
+use crate::{evaluation::depth::ThreadedEvaluator, prelude::*};
 use eframe::{
     egui,
     epaint::{Color32, Rounding, Stroke},
@@ -72,7 +72,7 @@ impl<'a> Default for SquareData<'a> {
 }
 
 fn collect_data<'a>(app: &ChessApp) -> Vec<SquareData<'a>> {
-    let position = app.tree.position;
+    let position = app.eval.position();
     let selected = app.selected_piece;
     let highlight = &app.highlight;
 
@@ -134,8 +134,12 @@ fn collect_data<'a>(app: &ChessApp) -> Vec<SquareData<'a>> {
             sq_idx: ipiece,
             on_click: |app, has_piece, movable, sq| {
                 if movable && let Some(piece) = app.selected_piece {
-                    app.tree.position.make_move(piece, sq);
-                    app.tree.move_into(app.tree.position);
+                    app.eval.move_into({
+                        let mut position = app.eval.position();
+
+                        position.make_move(piece, sq);
+                        position
+                    });
 
                     app.highlight.from_to(piece, sq);
                 } else if has_piece
@@ -156,7 +160,7 @@ fn collect_data<'a>(app: &ChessApp) -> Vec<SquareData<'a>> {
 
 #[derive(Default)]
 pub struct ChessApp {
-    tree: GameTree,
+    eval: ThreadedEvaluator,
     selected_piece: Option<Square>,
     highlight: HighlightList,
 }

@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use crate::prelude::*;
 
-pub trait SquareU8: Sized {
+pub trait SquareU8: Sized + PartialEq + Copy {
     fn new(rank: u8, file: u8) -> Self;
     fn rank(&self) -> u8;
     fn file(&self) -> u8;
@@ -11,14 +11,12 @@ pub trait SquareU8: Sized {
     fn try_add(&self, other_rank: i8, other_file: i8) -> Option<Self>;
     fn get(&self) -> u8;
     fn every() -> impl Iterator<Item = Self>;
-    fn distance_to(&self, other: Self) -> f64 {
-        let x1 = self.rank() as f64;
-        let y1 = self.file() as f64;
 
-        let x2 = other.rank() as f64;
-        let y2 = other.file() as f64;
+    fn distance_to(&self, other: Self) -> u8 {
+        let rank = (self.rank() as i8 - other.rank() as i8).abs();
+        let file = (self.file() as i8 - other.file() as i8).abs();
 
-        ((x2 - x1).powi(2) + (y2 - y1).powi(2)).sqrt()
+        rank.max(file) as u8
     }
 
     fn pretty(&self) -> String {

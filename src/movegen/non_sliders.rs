@@ -59,21 +59,27 @@ pub fn king(
         position.in_check(color)
     };
 
+    let blocking_wks = 0x60 & position.occupied();
+    let blocking_wqs = 0xc & position.occupied();
+    let blocking_bks = 0x6000000000000000 & position.occupied();
+    let blocking_bqs = 0xc00000000000000 & position.occupied();
+
     if !position.in_check(color) {
         match color {
             Color::White => {
-                if castling.kingside_white && !in_check_ks {
+                if castling.kingside_white && !in_check_ks && blocking_wks == Bitboard::EMPTY {
                     moves |= Square::new(0, 6).to_bitboard();
                 }
-                if castling.queenside_white && !in_check_qs {
+
+                if castling.queenside_white && !in_check_qs && blocking_wqs == Bitboard::EMPTY {
                     moves |= Square::new(0, 2).to_bitboard();
                 }
             }
             Color::Black => {
-                if castling.kingside_black && !in_check_ks {
+                if castling.kingside_black && !in_check_ks && blocking_bks == Bitboard::EMPTY {
                     moves |= Square::new(7, 6).to_bitboard();
                 }
-                if castling.queenside_black && !in_check_qs {
+                if castling.queenside_black && !in_check_qs && blocking_bqs == Bitboard::EMPTY {
                     moves |= Square::new(7, 2).to_bitboard();
                 }
             }

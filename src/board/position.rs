@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::{movegen, prelude::*};
 
 #[derive(Clone, Copy)]
@@ -57,11 +59,15 @@ impl Position {
         }
     }
 
-    pub fn filled(&self) -> Bitboard {
+    pub fn occupied(&self) -> Bitboard {
         self.n_white | self.n_black
     }
 
-    fn piece_at(&self, square: Square) -> Option<gui::PieceType> {
+    pub fn pieces(&self) -> Bitboard {
+        self.rooks | self.knights | self.bishops | self.queens
+    }
+
+    pub fn piece_at(&self, square: Square) -> Option<gui::PieceType> {
         if self.pawns & square.to_bitboard() != Bitboard::EMPTY {
             return Some(gui::PieceType::Pawn);
         }
@@ -126,6 +132,10 @@ impl Position {
         }
     }
 
+    pub fn pieces_of_turn(&self) -> Bitboard {
+        self.pieces_of_col(self.turn)
+    }
+
     fn pieces_of_type_mut(&mut self, piece_type: gui::PieceType) -> &mut Bitboard {
         match piece_type {
             gui::PieceType::Pawn => &mut self.pawns,
@@ -142,7 +152,7 @@ impl Position {
 
         match piece {
             gui::PieceType::Pawn => {
-                if from.distance_to(to) >= 2.0 {
+                if from.distance_to(to) == 2 {
                     Some(SpecialMoveType::PawnDouble)
                 } else if self.ep_target.is_some_and(|a| a == to) {
                     Some(SpecialMoveType::EnPassant)
@@ -153,7 +163,7 @@ impl Position {
                 }
             }
             gui::PieceType::King => {
-                if from.distance_to(to) >= 2.0 {
+                if from.distance_to(to) == 2 {
                     if from.file() > to.file() {
                         Some(SpecialMoveType::CastleQueen)
                     } else {
